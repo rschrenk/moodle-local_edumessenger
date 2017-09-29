@@ -116,7 +116,7 @@ class local_edumessenger {
         curl_close($ch);
         $chk = json_decode($result);
 
-        $this->message('Result: ' . var_dump(($chk != "") ? $chk : $result, true));
+        $this->message('Result: ' . var_export(($chk != "") ? $chk : $result, true));
         return utf8_decode($result);
     }
     public function asutf8($str) {

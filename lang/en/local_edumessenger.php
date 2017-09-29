@@ -69,4 +69,4 @@ $string['no'] = 'No';
 $string['user'] = 'user';
 $string['users'] = 'users';
 
-$string['contingent:info'] = 'This amount of users can use eduMessenger with your instance of moodle for 1 year.';
+$string['contingent:info'] = 'This is the amount of users that can connect their moodle accounts to eduMessenger and use it for 1 year.';
