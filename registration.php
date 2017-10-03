@@ -69,7 +69,7 @@ if (@$_GET['create_token'] == '1') {
     }
 }
 
-$communicationtocentral = (@$auth->status == 'ok') ? 1 : 0;
+$communicationtocentral = (@$auth->status == 'ok' && $edm->secret() != '') ? 1 : 0;
 $communicationtomoodle = ($edm->servicetoken != '') ? 1 : 0;
 $communicationimage = $CFG->wwwroot . '/local/edumessenger/img/' . $communicationtocentral . $communicationtomoodle . ".gif";
 
