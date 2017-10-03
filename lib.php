@@ -103,7 +103,7 @@ class local_edumessenger {
             'payload' => $payload,
         );
         $this->message('Using Central: ' . $this->url . '/services/service.php');
-        $this->message('Request: ' . var_export($data, true));
+        //$this->message('Request: ' . var_export($data, true));
 
         $payload = json_encode($data);
         $ch = curl_init($this->url . '/services/service.php');
@@ -116,7 +116,7 @@ class local_edumessenger {
         curl_close($ch);
         $chk = json_decode($result);
 
-        $this->message('Result: ' . var_export(($chk != "") ? $chk : $result, true));
+        //$this->message('Result: ' . var_export(($chk != "") ? $chk : $result, true));
         return utf8_decode($result);
     }
     public function asutf8($str) {

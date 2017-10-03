@@ -91,12 +91,16 @@ class local_edumessenger_taskhelper {
             if ($entry->relateduserid > 0 && $entry->userid == $entry->relateduserid) {
                 continue;
             }
+            $entry->other = unserialize($entry->other);
 
             if ($entry->userid > 0) {
                 $entry->user = $DB->get_record("user", array("id" => $entry->userid));
             }
             if ($entry->relateduserid > 0) {
                 $entry->relateduser = $DB->get_record("user", array("id" => $entry->relateduserid));
+            }
+            if ($entry->eventname == "\\core\\event\\message_sent") {
+                $entry->msg = $DB->get_record("message", array("id" => $entry->other["messageid"]));
             }
             if ($entry->eventname == "\\mod_forum\\event\\discussion_created") {
                 $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
