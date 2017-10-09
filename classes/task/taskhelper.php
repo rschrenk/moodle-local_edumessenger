@@ -65,7 +65,7 @@ class local_edumessenger_taskhelper {
             "\\core\\event\\course_module_deleted",
             "\\mod_forum\\event\\discussion_created",
             "\\mod_forum\\event\\discussion_deleted",
-            "\\mod_forum\\event\\assessable_uploaded",
+            // "\\mod_forum\\event\\assessable_uploaded",
             "\\mod_forum\\event\\post_updated",
             "\\mod_forum\\event\\post_created",
             "\\mod_forum\\event\\post_deleted",
@@ -76,7 +76,7 @@ class local_edumessenger_taskhelper {
         $events = array();
         $entries = $DB->get_records_sql('SELECT * FROM {logstore_standard_log} WHERE id>? LIMIT 0,50000', array($logid));
 
-        echo "Analyzing " . count($entries) . " Events since logid $logid<br />";
+        $this->message("Analyzing " . count($entries) . " Events since logid " . $logid);
         foreach ($entries as $entry) {
             // We are not interested in many events.
             if (!in_array($entry->eventname, $filter)) {
@@ -119,13 +119,13 @@ class local_edumessenger_taskhelper {
         );
 
         if (count($events) > 0) {
-            echo "Sending ".count($events)." events";
-            var_dump($payload);
+            $this->message("Sending ".count($events)." events");
+            $this->message(json_encode($payload));
             $this->curl($payload);
         } else {
-            echo "No new events to send!<br />";
+            $this->message("No new events to send!");
             if ($entry->id > 0) {
-                echo "Set latest logid to " . $entry->id;
+                $this->message("Set latest logid to " . $entry->id);
                 set_config('logid', $entry->id, 'edumessenger');
             }
         }
@@ -141,8 +141,7 @@ class local_edumessenger_taskhelper {
             'payload' => $payload,
         );
 
-        echo 'Developer: ' . $developer . '<br/>';
-        echo 'URL: ' . $this->url . '/services/service.php<br />';
+        $this->message('URL: ' . $this->url . '/services/service.php');
 
         $payload = json_encode($data);
         $ch = curl_init($this->url . '/services/service.php');
@@ -160,10 +159,12 @@ class local_edumessenger_taskhelper {
             set_config('logid', $chk->logid, 'edumessenger');
         } else {
             $this->message('Got no latest logid: ');
-            var_dump($result);
+            $this->message(json_encode($result));
         }
 
-        $this->messages_show();
+        if ($this->debugmode) {
+            $this->messages_show();
+        }
     }
     public function asutf8($str) {
         if (preg_match('!!u', $str)) {
@@ -176,9 +177,7 @@ class local_edumessenger_taskhelper {
         $this->messages[] = $str;
     }
     public function messages_show() {
-        if (true || $this->debugmode) {
-            echo "===== Debug =====\n";
-            echo "-- " . implode("\n-- ", $this->messages) . "\n\n";
-        }
+        echo "===== Debug =====<br />\n";
+        echo "-- " . implode("\n<br />-- ", $this->messages) . "\n\n";
     }
 }

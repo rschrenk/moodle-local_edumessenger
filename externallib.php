@@ -38,10 +38,12 @@ class local_edumessenger_external extends external_api {
 
     /**
      * Calls the cron-function in object taskhelper.
-     * @ereturn boolean true if cron was called.
+     * @return boolean true if cron was called.
      */
     public static function ping() {
         $task = new local_edumessenger_taskhelper();
+        // We have to prohibit debugmode as it would break our return value!
+        $task->debugmode = false;
         return $task->cron();
     }
 
