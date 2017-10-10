@@ -55,12 +55,14 @@ if ($formdata = $regform->get_data()) {
 
 $auth = $edm->site_auth();
 
-if (@$_GET['developermode'] != '') {
-    $edm->set('developermode', $_GET['developermode']);
-    echo "<p class=\"alert alert-success\">Developermode " . (($_GET['developermode'] == '0') ? 'disabled' : 'enabled') . "</p>";
+$devmode = optional_param('developermode', -1, PARAM_INT);
+if ($devmode > -1) {
+    $edm->set('developermode', $devmode);
+    echo "<p class=\"alert alert-success\">Developermode " . (($devmode == '0') ? 'disabled' : 'enabled') . "</p>";
 }
 
-if (@$_GET['create_token'] == '1') {
+$createtoken = optional_param('create_token', -1, PARAM_INT);
+if ($createtoken == 1) {
     if ($edm->site_register()) {
         echo "<p class=\"alert alert-success\">" . get_string('token:changed', 'local_edumessenger') . "</p>";
         $auth = $edm->site_auth();

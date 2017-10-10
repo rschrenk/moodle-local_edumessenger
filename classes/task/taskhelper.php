@@ -32,20 +32,20 @@ class local_edumessenger_taskhelper {
         $this->load_settings();
     }
     public function load_settings() {
-        $this->debugmode = get_config('edumessenger', 'debugmode');
-        $this->developermode = get_config('edumessenger', 'developermode');
+        $this->debugmode = get_config('local_edumessenger', 'debugmode');
+        $this->developermode = get_config('local_edumessenger', 'developermode');
         $this->url = ($this->developermode) ? 'http://localhost/eduMessenger' : 'https://messenger.dibig.at';
     }
 
     public function secret() {
-        $secret = get_config('edumessenger', 'secret');
+        $secret = get_config('local_edumessenger', 'secret');
         return $secret;
     }
 
     public function cron() {
         global $DB;
 
-        $logid = get_config('edumessenger', 'logid');
+        $logid = get_config('local_edumessenger', 'logid');
         if ($logid == "") {
             $entries = $DB->get_records_sql('SELECT MAX(id) AS id FROM {logstore_standard_log}', array());
             foreach ($entries as $entry) {
@@ -82,9 +82,10 @@ class local_edumessenger_taskhelper {
             if (!in_array($entry->eventname, $filter)) {
                 continue;
             }
-            // We are not interested in messages that have been set by system user.
+            // We are not interested in messages that have been set by system user or via cli.
             if (($entry->eventname == "\\core\\event\\message_sent" || $entry->eventname == "\\core\\event\\message_deleted")
-                && $entry->userid == 0) {
+                &&
+                ($entry->userid == 0 || $entry->origin == "cli")) {
                 continue;
             }
             // We are not interested if a user sends himself a message or so.
@@ -100,7 +101,11 @@ class local_edumessenger_taskhelper {
                 $entry->relateduser = $DB->get_record("user", array("id" => $entry->relateduserid));
             }
             if ($entry->eventname == "\\core\\event\\message_sent") {
-                $entry->msg = $DB->get_record("message", array("id" => $entry->other["messageid"]));
+                $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
+                // If this message does not exist in database anymore continue.
+                if (!isset($entry->msg->fullmessage)) {
+                    continue;
+                }
             }
             if ($entry->eventname == "\\mod_forum\\event\\discussion_created") {
                 $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
@@ -126,7 +131,7 @@ class local_edumessenger_taskhelper {
             $this->message("No new events to send!");
             if ($entry->id > 0) {
                 $this->message("Set latest logid to " . $entry->id);
-                set_config('logid', $entry->id, 'edumessenger');
+                set_config('logid', $entry->id, 'local_edumessenger');
             }
         }
         return true;
@@ -156,7 +161,7 @@ class local_edumessenger_taskhelper {
         $chk = json_decode($result);
         if (isset($chk->logid)) {
             $this->message('Set latest logid to ' . $chk->logid);
-            set_config('logid', $chk->logid, 'edumessenger');
+            set_config('logid', $chk->logid, 'local_edumessenger');
         } else {
             $this->message('Got no latest logid: ');
             $this->message(json_encode($result));

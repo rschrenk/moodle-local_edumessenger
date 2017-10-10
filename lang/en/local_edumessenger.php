@@ -23,6 +23,8 @@
 
 $string['pluginname'] = 'eduMessenger';
 $string['data:manage'] = 'eduMessenger Registration';
+$string['edumessenger:manage'] = 'Manage eduMessenger';
+
 $string['cron:title'] = 'eduMessenger Cron';
 $string['missing_capability'] = 'Missing required Capability';
 $string['submit'] = 'Submit';

@@ -40,8 +40,8 @@ class local_edumessenger {
         }
     }
     public function load_settings() {
-        $this->debugmode = get_config('edumessenger', 'debugmode');
-        $this->developermode = get_config('edumessenger', 'developermode');
+        $this->debugmode = get_config('local_edumessenger', 'debugmode');
+        $this->developermode = get_config('local_edumessenger', 'developermode');
         $this->url = ($this->developermode) ? 'http://localhost/eduMessenger' : 'https://messenger.dibig.at';
     }
     public function site_register() {
@@ -81,7 +81,7 @@ class local_edumessenger {
 
     public function set($p, $v) {
         $this->message("Set $p to $v");
-        set_config($p, $v, 'edumessenger');
+        set_config($p, $v, 'local_edumessenger');
         switch($p) {
             case "secret":
                 $this->secret = $v;
@@ -92,7 +92,7 @@ class local_edumessenger {
         }
     }
     public function secret() {
-        $secret = get_config('edumessenger', 'secret');
+        $secret = get_config('local_edumessenger', 'secret');
         return $secret;
     }
     public function curl($payload, $debug=false) {

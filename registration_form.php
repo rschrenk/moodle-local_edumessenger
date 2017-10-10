@@ -33,8 +33,8 @@ class edumessenger_registration_form extends moodleform {
         $mform->addElement('checkbox', 'debugmode', get_string('debugmode', 'local_edumessenger'));
         $mform->addElement('submit', '', get_string('submit', 'local_edumessenger'));
         $mform->setType('secret', 'text');
-        $mform->setDefault('secret', get_config('edumessenger', 'secret'));
-        $mform->setDefault('debugmode', get_config('edumessenger', 'debugmode'));
+        $mform->setDefault('secret', get_config('local_edumessenger', 'secret'));
+        $mform->setDefault('debugmode', get_config('local_edumessenger', 'debugmode'));
     }
     public function validation($data, $files) {
         return array();
