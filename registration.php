@@ -84,7 +84,7 @@ $communicationimage = $CFG->wwwroot . '/local/edumessenger/img/' . $communicatio
     <tr>
         <td align="center"><?php echo get_string('lbl:justclick', 'local_edumessenger'); ?></td>
         <td align="center">&nbsp;</td>
-        <td align="center"><?php echo get_string('lbl:createwebservicetoken', 'local_edumessenger'); ?></td>
+        <td align="center"><?php echo str_replace('{wwwroot}', $CFG->wwwroot, get_string('lbl:createwebservicetoken', 'local_edumessenger')); ?></td>
     </tr>
     <tr>
         <td width="40%" style="margin: 0px; text-align: center"

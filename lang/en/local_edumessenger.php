@@ -42,7 +42,7 @@ $string['token:changed'] = 'Token created/renewed';
 $string['token:failed'] = 'Connection error';
 
 $string['lbl:justclick'] = 'Just click the following button!';
-$string['lbl:createwebservicetoken'] = 'Go to <a href="'.$CFG->wwwroot.'/admin/webservice/tokens.php?action=create">Webservice Tokens</a>, create one and make sure you select a user with administrative privileges and the Webservice \'eduMessenger\'!';
+$string['lbl:createwebservicetoken'] = 'Go to <a href="{wwwroot}/admin/webservice/tokens.php?action=create">Webservice Tokens</a>, create one and make sure you select a user with administrative privileges and the Webservice \'eduMessenger\'!';
 
 $string['step1:head'] = 'Step 1 - Secure Communication';
 $string['step1:p1'] = 'You need two secret tokens to setup the communication between your Moodle and eduMessenger. One token authenticates you against eduMessenger Central, and the other one allows eduMessenger to interact with your Moodle.';
