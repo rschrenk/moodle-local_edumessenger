@@ -23,7 +23,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version  = 2017101500;   // The (date) version of this module + 2 extra digital for daily versions
+$plugin->version  = 2017101501;   // The (date) version of this module + 2 extra digital for daily versions
                                   // This version number is displayed into /admin/forms.php
                                   // TODO: if ever this plugin get branched, the old branch number
                                   // will not be updated to the current date but just incremented. We will
@@ -32,5 +32,5 @@ $plugin->version  = 2017101500;   // The (date) version of this module + 2 extra
 $plugin->requires = 2016120500;  // Requires at least Moodle 3.2!
 $plugin->component = 'local_edumessenger';
 $plugin->cron     = 0;
-$plugin->release = '1.0 (Build: 2011101202)';
+$plugin->release = '1.0 (2017101501)';
 $plugin->maturity = MATURITY_STABLE;
