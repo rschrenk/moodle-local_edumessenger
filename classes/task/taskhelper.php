@@ -102,7 +102,11 @@ class local_edumessenger_taskhelper {
             }
             if ($entry->eventname == "\\core\\event\\message_sent") {
                 $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
-                // If this message does not exist in database anymore continue.
+                // If this message does not exist in the unread messages table try in read messages table.
+                if (!isset($entry->msg->fullmessage)) {
+                    $entry->msg = $DB->get_record("message_read", array("id" => $entry->other->messageid));
+                }
+                // If this message is still empty continue.
                 if (!isset($entry->msg->fullmessage)) {
                     continue;
                 }

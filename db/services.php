@@ -25,13 +25,20 @@ defined('MOODLE_INTERNAL') || die;
 
 // We define the web service functions to install.
 $functions = array(
-        'local_edumessenger_ping' => array(
-            'classname'   => 'local_edumessenger_external',
-            'methodname'  => 'ping',
-            'classpath'   => 'local/edumessenger/externallib.php',
-            'description' => 'Calls edumessenger-Cron to assure faster push-notifications',
-            'type'        => 'read',
-        )
+    'local_edumessenger_ping' => array(
+        'classname'   => 'local_edumessenger_external',
+        'methodname'  => 'ping',
+        'classpath'   => 'local/edumessenger/externallib.php',
+        'description' => 'Calls edumessenger-Cron to assure faster push-notifications',
+        'type'        => 'read',
+    ),
+    'local_edumessenger_amount' => array(
+        'classname'   => 'local_edumessenger_external',
+        'methodname'  => 'amount',
+        'classpath'   => 'local/edumessenger/externallib.php',
+        'description' => 'Returns the amount of active users in this moodle.',
+        'type'        => 'read',
+    )
 );
 
 
@@ -40,6 +47,7 @@ $services = array(
     'eduMessenger' => array(
         'functions' => array (
             'local_edumessenger_ping',
+            'local_edumessenger_amount',
             'core_course_delete_courses',
             'core_course_duplicate_course',
             'core_course_get_categories',

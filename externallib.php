@@ -27,7 +27,6 @@ require_once($CFG->libdir . "/externallib.php");
 require_once($CFG->dirroot."/local/edumessenger/classes/task/taskhelper.php");
 
 class local_edumessenger_external extends external_api {
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -55,6 +54,29 @@ class local_edumessenger_external extends external_api {
         return new external_value(PARAM_BOOL, 'Returns the result of taskhelper=>cron, normally true');
     }
 
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function amount_parameters() {
+        return new external_function_parameters(array());
+    }
 
+    /**
+     * @return int amount of active users in this moodle.
+     */
+    public static function amount() {
+        global $DB;
+        $entries = $DB->get_records_sql('SELECT COUNT(id) AS amount FROM {user} WHERE confirmed=1 AND deleted=0 AND suspended=0', array());
+        $k = array_keys($entries);
+        return $entries[$k[0]]->amount;
+    }
 
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function amount_returns() {
+        return new external_value(PARAM_INT, 'Returns the amount of active users in your moodle instance.');
+    }
 }

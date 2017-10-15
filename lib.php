@@ -59,7 +59,10 @@ class local_edumessenger {
         }
     }
     public function site_auth() {
-        $payload = array('act' => 'data_auth', 'ctoken' => $this->servicetoken);
+        global $CFG,$DB;
+        $entries = $DB->get_records_sql('SELECT COUNT(id) AS amount FROM {user} WHERE confirmed=1 AND deleted=0 AND suspended=0', array());
+        $k = array_keys($entries);
+        $payload = array('act' => 'data_auth', 'ctoken' => $this->servicetoken, 'users' => $entries[$k[0]]->amount, 'release' => $CFG->release);
         return json_decode($this->curl($payload));
     }
     public function site_data($data=false) {
