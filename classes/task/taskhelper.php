@@ -148,6 +148,8 @@ class local_edumessenger_taskhelper {
             'secret' => $this->secret(),
             'debugmode' => $this->debugmode,
             'payload' => $payload,
+            'release' => $CFG->release,
+            'plugin' => get_config('local_edumessenger', 'version')
         );
 
         $this->message('URL: ' . $this->url . '/services/service.php');
