@@ -92,7 +92,7 @@ class local_edumessenger_taskhelper {
             if ($entry->relateduserid > 0 && $entry->userid == $entry->relateduserid) {
                 continue;
             }
-            $entry->other = unserialize($entry->other);
+            $entry->other = (object)unserialize($entry->other);
 
             if ($entry->userid > 0) {
                 $entry->user = $DB->get_record("user", array("id" => $entry->userid));
@@ -103,7 +103,7 @@ class local_edumessenger_taskhelper {
             if ($entry->eventname == "\\core\\event\\message_sent") {
                 $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
                 // If this message does not exist in the unread messages table try in read messages table.
-                if (!isset($entry->msg->fullmessage)) {
+                if (!isset($entry->msg->fullmessage) || empty($entry->msg->fullmessage)) {
                     $entry->msg = $DB->get_record("message_read", array("id" => $entry->other->messageid));
                 }
                 // If this message is still empty continue.
