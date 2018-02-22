@@ -29,7 +29,7 @@ $plugin->version  = 2018022212;   // The (date) version of this module + 2 extra
                                   // will not be updated to the current date but just incremented. We will
                                   // need then a $plugin->release human friendly date. For the moment, we use
                                   // display this version number with userdate (dev friendly)
-$plugin->requires = 2016120500;  // Requires at least Moodle 3.2!
+$plugin->requires = 2016052300;  // Requires at least Moodle 3.1!
 $plugin->component = 'local_edumessenger';
 $plugin->cron     = 0;
 $plugin->release = '1.2 (2018022212)';
