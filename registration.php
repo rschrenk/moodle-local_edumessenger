@@ -31,7 +31,7 @@ require_once($CFG->dirroot . '/local/edumessenger/lib.php');
 
 $PAGE->set_context(context_system::instance());
 $PAGE->set_pagelayout('admin');
-$PAGE->set_url('/local/edumessenger/pages/registration.php', array());
+$PAGE->set_url('/local/edumessenger/registration.php', array());
 $PAGE->set_title('eduMessenger Registration');
 $PAGE->set_heading('eduMessenger Registration');
 
@@ -108,7 +108,7 @@ switch(@$auth->status) {
     case 'not_registered':
         ?>
         <p>
-            <?php echo get_string('step1:not_registered', 'local_edumessenger'); ?>  
+            <?php echo get_string('step1:not_registered', 'local_edumessenger'); ?>
         </p>
         <?php
     break;

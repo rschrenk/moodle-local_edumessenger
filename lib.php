@@ -34,7 +34,8 @@ class local_edumessenger {
         foreach ($entries as $entry) {
             $this->serviceid = $entry->id;
         }
-        $entries = $DB->get_records_sql('SELECT token FROM {external_tokens} WHERE externalserviceid=?', array($this->serviceid));
+        $validuntil = time();
+        $entries = $DB->get_records_sql('SELECT token FROM {external_tokens} WHERE externalserviceid=? AND (validuntil>? OR validuntil=0)', array($this->serviceid, $validuntil));
         foreach ($entries as $entry) {
             $this->servicetoken = $entry->token;
         }

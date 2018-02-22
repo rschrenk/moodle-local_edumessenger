@@ -26,34 +26,11 @@ defined('MOODLE_INTERNAL') || die;
 require_once($CFG->libdir . "/externallib.php");
 require_once($CFG->dirroot."/local/edumessenger/classes/task/taskhelper.php");
 
+
+/**
+** add function for get_capatility moodle/site:accessallgroups in course
+**/
 class local_edumessenger_external extends external_api {
-    /**
-     * Returns description of method parameters
-     * @return external_function_parameters
-     */
-    public static function ping_parameters() {
-        return new external_function_parameters(array());
-    }
-
-    /**
-     * Calls the cron-function in object taskhelper.
-     * @return boolean true if cron was called.
-     */
-    public static function ping() {
-        $task = new local_edumessenger_taskhelper();
-        // We have to prohibit debugmode as it would break our return value!
-        $task->debugmode = false;
-        return $task->cron();
-    }
-
-    /**
-     * Returns description of method result value
-     * @return external_description
-     */
-    public static function ping_returns() {
-        return new external_value(PARAM_BOOL, 'Returns the result of taskhelper=>cron, normally true');
-    }
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -78,5 +55,31 @@ class local_edumessenger_external extends external_api {
      */
     public static function amount_returns() {
         return new external_value(PARAM_INT, 'Returns the amount of active users in your moodle instance.');
+    }
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function ping_parameters() {
+        return new external_function_parameters(array());
+    }
+
+    /**
+     * Calls the cron-function in object taskhelper.
+     * @return boolean true if cron was called.
+     */
+    public static function ping() {
+        $task = new local_edumessenger\task\local_edumessenger_taskhelper();
+        // We have to prohibit debugmode as it would break our return value!
+        $task->debugmode = false;
+        return $task->cron();
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function ping_returns() {
+        return new external_value(PARAM_BOOL, 'Returns the result of taskhelper=>cron, normally true');
     }
 }

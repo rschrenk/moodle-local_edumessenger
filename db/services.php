@@ -25,6 +25,13 @@ defined('MOODLE_INTERNAL') || die;
 
 // We define the web service functions to install.
 $functions = array(
+    'local_edumessenger_amount' => array(
+        'classname'   => 'local_edumessenger_external',
+        'methodname'  => 'amount',
+        'classpath'   => 'local/edumessenger/externallib.php',
+        'description' => 'Returns the amount of active users in this moodle.',
+        'type'        => 'read',
+    ),
     'local_edumessenger_ping' => array(
         'classname'   => 'local_edumessenger_external',
         'methodname'  => 'ping',
@@ -32,13 +39,6 @@ $functions = array(
         'description' => 'Calls edumessenger-Cron to assure faster push-notifications',
         'type'        => 'read',
     ),
-    'local_edumessenger_amount' => array(
-        'classname'   => 'local_edumessenger_external',
-        'methodname'  => 'amount',
-        'classpath'   => 'local/edumessenger/externallib.php',
-        'description' => 'Returns the amount of active users in this moodle.',
-        'type'        => 'read',
-    )
 );
 
 
@@ -46,8 +46,9 @@ $functions = array(
 $services = array(
     'eduMessenger' => array(
         'functions' => array (
-            'local_edumessenger_ping',
             'local_edumessenger_amount',
+            'local_edumessenger_logout',
+            'local_edumessenger_ping',
             'core_course_delete_courses',
             'core_course_duplicate_course',
             'core_course_get_categories',
@@ -61,6 +62,8 @@ $services = array(
             'core_webservice_get_site_info',
             'enrol_manual_enrol_users',
             'enrol_manual_unenrol_users',
+            'mod_forum_get_forum_discussion_posts',
+            'mod_forum_get_forum_discussions_paginated',
             'tool_mobile_get_public_config',
         ),
         'restrictedusers' => 0,
