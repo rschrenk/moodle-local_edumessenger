@@ -24,8 +24,6 @@
 defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->libdir . "/externallib.php");
-require_once($CFG->dirroot."/local/edumessenger/classes/task/taskhelper.php");
-
 
 /**
 ** add function for get_capatility moodle/site:accessallgroups in course
@@ -69,7 +67,9 @@ class local_edumessenger_external extends external_api {
      * @return boolean true if cron was called.
      */
     public static function ping() {
-        $task = new local_edumessenger\task\local_edumessenger_taskhelper();
+        global $CFG;
+        require_once($CFG->dirroot . "/local/edumessenger/classes/task/taskhelper.php");
+        $task = new \local_edumessenger\task\local_edumessenger_taskhelper();
         // We have to prohibit debugmode as it would break our return value!
         $task->debugmode = false;
         return $task->cron();

@@ -78,48 +78,10 @@ class local_edumessenger_taskhelper {
 
         $this->message("Analyzing " . count($entries) . " Events since logid " . $logid);
         foreach ($entries as $entry) {
-            // We are not interested in many events.
-            if (!in_array($entry->eventname, $filter)) {
-                continue;
+            $entry = $this->enhanceEntry($entry, $filter);
+            if ($entry != null) {
+                $events[] = $entry;
             }
-            // We are not interested in messages that have been set by system user or via cli.
-            if (($entry->eventname == "\\core\\event\\message_sent" || $entry->eventname == "\\core\\event\\message_deleted")
-                &&
-                ($entry->userid == 0 || $entry->origin == "cli")) {
-                continue;
-            }
-            // We are not interested if a user sends himself a message or so.
-            if ($entry->relateduserid > 0 && $entry->userid == $entry->relateduserid) {
-                continue;
-            }
-            $entry->other = (object)unserialize($entry->other);
-
-            if ($entry->userid > 0) {
-                $entry->user = $DB->get_record("user", array("id" => $entry->userid));
-            }
-            if ($entry->relateduserid > 0) {
-                $entry->relateduser = $DB->get_record("user", array("id" => $entry->relateduserid));
-            }
-            if ($entry->eventname == "\\core\\event\\message_sent") {
-                $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
-                // If this message does not exist in the unread messages table try in read messages table.
-                if (!isset($entry->msg->fullmessage) || empty($entry->msg->fullmessage)) {
-                    $entry->msg = $DB->get_record("message_read", array("id" => $entry->other->messageid));
-                }
-                // If this message is still empty continue.
-                if (!isset($entry->msg->fullmessage)) {
-                    continue;
-                }
-            }
-            if ($entry->eventname == "\\mod_forum\\event\\discussion_created") {
-                $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
-                $entry->post = $DB->get_record("forum_posts", array("discussion" => $entry->objectid, "parent" => 0));
-            }
-            if ($entry->eventname == "\\mod_forum\\event\\post_created") {
-                $entry->post = $DB->get_record("forum_posts", array("id" => $entry->objectid));
-                $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->post->discussion));
-            }
-            $events[] = $entry;
         }
 
         $payload = array(
@@ -139,6 +101,64 @@ class local_edumessenger_taskhelper {
             }
         }
         return true;
+    }
+    public function enhanceEntry($entry, $filter=array()) {
+        global $DB;
+        // We are not interested in many events.
+        if (count($filter) > 0 && !in_array($entry->eventname, $filter)) {
+            return null;
+        }
+        // We are not interested in messages that have been set by system user or via cli.
+        if (($entry->eventname == "\\core\\event\\message_sent" || $entry->eventname == "\\core\\event\\message_deleted")
+            &&
+            ($entry->userid == 0 || (isset($entry->origin) && $entry->origin == "cli"))) {
+            return null;
+        }
+        // We are not interested if a user sends himself a message or so.
+        if ($entry->relateduserid > 0 && $entry->userid == $entry->relateduserid) {
+            return null;
+        }
+        if (is_array($entry->other)) $entry->other = (object) $entry->other;
+        else $entry->other = (object)unserialize($entry->other);
+
+        if ($entry->userid > 0) {
+            $entry->user = $DB->get_record("user", array("id" => $entry->userid));
+        }
+        if ($entry->relateduserid > 0) {
+            $entry->relateduser = $DB->get_record("user", array("id" => $entry->relateduserid));
+        }
+        if ($entry->eventname == "\\core\\event\\message_sent") {
+            $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
+            // If this message does not exist in the unread messages table try in read messages table.
+            if (!isset($entry->msg->fullmessage) || empty($entry->msg->fullmessage)) {
+                $entry->msg = $DB->get_record("message_read", array("id" => $entry->other->messageid));
+            }
+            // If this message is still empty continue.
+            if (!isset($entry->msg->fullmessage)) {
+                return null;
+            }
+        }
+        if ($entry->eventname == "\\mod_forum\\event\\discussion_created") {
+            $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
+            $entry->post = $DB->get_record("forum_posts", array("discussion" => $entry->objectid, "parent" => 0));
+        }
+        if ($entry->eventname == "\\mod_forum\\event\\post_created") {
+            $entry->post = $DB->get_record("forum_posts", array("id" => $entry->objectid));
+            $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->post->discussion));
+        }
+        if (count($filter) > 0) {
+            return $entry;
+        } else {
+            $payload = array(
+                "act" => "log",
+                "byobserver" => true,
+                "events" => array($entry)
+            );
+
+            $this->message("Sending 1 events from observer");
+            $this->message(json_encode($payload));
+            $this->curl($payload);
+        }
     }
     public function curl($payload, $debug=false) {
         global $CFG;
@@ -166,8 +186,13 @@ class local_edumessenger_taskhelper {
 
         $chk = json_decode($result);
         if (isset($chk->logid)) {
-            $this->message('Set latest logid to ' . $chk->logid);
-            set_config('logid', $chk->logid, 'local_edumessenger');
+            $logid = get_config('local_edumessenger', 'logid');
+            if ($chk->logid > $logid) {
+                $this->message('Set latest logid to ' . $chk->logid);
+                set_config('logid', $chk->logid, 'local_edumessenger');
+            } else {
+                $this->message('Latest logid (' . $logid . ') already higher than ' . $chk->logid);
+            }
         } else {
             $this->message('Got no latest logid: ');
             $this->message(json_encode($result));

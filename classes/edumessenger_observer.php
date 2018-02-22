@@ -15,22 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Links and settings
  * @package    local_edumessenger
  * @copyright  2017 Digital Education Society (http://www.dibig.at)
+ * @author     Robert Schrenk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace local_edumessenger;
+
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version  = 2018022212;   // The (date) version of this module + 2 extra digital for daily versions
-                                  // This version number is displayed into /admin/forms.php
-                                  // TODO: if ever this plugin get branched, the old branch number
-                                  // will not be updated to the current date but just incremented. We will
-                                  // need then a $plugin->release human friendly date. For the moment, we use
-                                  // display this version number with userdate (dev friendly)
-$plugin->requires = 2016120500;  // Requires at least Moodle 3.2!
-$plugin->component = 'local_edumessenger';
-$plugin->cron     = 0;
-$plugin->release = '1.2 (2018022212)';
-$plugin->maturity = MATURITY_STABLE;
+class edumessenger_observer {
+    public static function event($event) {
+        global $CFG;
+        require_once($CFG->dirroot . "/local/edumessenger/classes/task/taskhelper.php");
+        $task = new \local_edumessenger\task\local_edumessenger_taskhelper();
+        // We have to prohibit debugmode as it would break our return value!
+        $task->debugmode = false;
+        $entry = (object)$event->get_data();
+        return $task->enhanceEntry($entry);
+    }
+
+}
