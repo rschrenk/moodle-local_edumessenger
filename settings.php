@@ -16,7 +16,7 @@
 
 /**
  * Links and settings
- * @package    localedumessenger
+ * @package    local_edumessenger
  * @copyright  2017 Digital Education Society (http://www.dibig.at)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,4 +32,3 @@ $ADMIN->add(
         'local/edumessenger:manage'
     )
 );
-

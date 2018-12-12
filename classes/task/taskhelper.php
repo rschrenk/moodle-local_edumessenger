@@ -54,30 +54,16 @@ class local_edumessenger_taskhelper {
         }
         $this->message('Loading logstore from id ' . $logid);
 
-        $filter = array(
-            "\\core\\event\\course_created",
-            "\\core\\event\\course_deleted",
-            "\\core\\event\\group_created",
-            "\\core\\event\\group_deleted'",
-            "\\core\\event\\group_member_added",
-            "\\core\\event\\group_member_removed",
-            "\\core\\event\\course_module_created",
-            "\\core\\event\\course_module_deleted",
-            "\\mod_forum\\event\\discussion_created",
-            "\\mod_forum\\event\\discussion_deleted",
-            // "\\mod_forum\\event\\assessable_uploaded",
-            "\\mod_forum\\event\\post_updated",
-            "\\mod_forum\\event\\post_created",
-            "\\mod_forum\\event\\post_deleted",
-            "\\core\\event\\message_sent",
-            "\\core\\event\\message_deleted",
-        );
+        $filter = $this->get_filter();
 
+        $lastid = 0;
         $events = array();
         $entries = $DB->get_records_sql('SELECT * FROM {logstore_standard_log} WHERE id>? LIMIT 0,50000', array($logid));
 
         $this->message("Analyzing " . count($entries) . " Events since logid " . $logid);
         foreach ($entries as $entry) {
+            if (strlen(print_r($events, 1)) > 1024*1024) continue;
+            $lastid = $entry->id;
             $entry = $this->enhanceEntry($entry, $filter);
             if ($entry != null) {
                 $events[] = $entry;
@@ -95,9 +81,9 @@ class local_edumessenger_taskhelper {
             $this->curl($payload);
         } else {
             $this->message("No new events to send!");
-            if ($entry->id > 0) {
-                $this->message("Set latest logid to " . $entry->id);
-                set_config('logid', $entry->id, 'local_edumessenger');
+            if ($lastid > 0) {
+                $this->message("Set latest logid to " . $lastid);
+                set_config('logid', $lastid, 'local_edumessenger');
             }
         }
         return true;
@@ -109,7 +95,7 @@ class local_edumessenger_taskhelper {
             return null;
         }
         // We are not interested in messages that have been set by system user or via cli.
-        if (($entry->eventname == "\\core\\event\\message_sent" || $entry->eventname == "\\core\\event\\message_deleted")
+        if (($entry->eventname == '\core\event\message_sent' || $entry->eventname == '\core\event\message_deleted')
             &&
             ($entry->userid == 0 || (isset($entry->origin) && $entry->origin == "cli"))) {
             return null;
@@ -127,24 +113,36 @@ class local_edumessenger_taskhelper {
         if ($entry->relateduserid > 0) {
             $entry->relateduser = $DB->get_record("user", array("id" => $entry->relateduserid));
         }
-        if ($entry->eventname == "\\core\\event\\message_sent") {
-            $entry->msg = $DB->get_record("message", array("id" => $entry->other->messageid));
+        if ($entry->eventname == '\core\event\message_sent') {
+            $entry->msg = $DB->get_record("messages", array("id" => $entry->objectid));
             // If this message does not exist in the unread messages table try in read messages table.
             if (!isset($entry->msg->fullmessage) || empty($entry->msg->fullmessage)) {
-                $entry->msg = $DB->get_record("message_read", array("id" => $entry->other->messageid));
+                $entry->msg = $DB->get_record("message_read", array("id" => $entry->objectid));
             }
             // If this message is still empty continue.
             if (!isset($entry->msg->fullmessage)) {
                 return null;
             }
+
+            // Check if one of the users is using edumessenger.
+            error_log('SELECT COUNT(id) FROM {edumessenger_userid_enabled} WHERE userid IN (' . implode(',', array($entry->userid, $entry->relateduserid)) . ') AND enabled=1');
+            $using = $DB->count_records_sql('SELECT COUNT(id) FROM {edumessenger_userid_enabled} WHERE userid IN (' . implode(',', array($entry->userid, $entry->relateduserid)) . ') AND enabled=1', array());
+            if ($using == 0) { return null; }
         }
-        if ($entry->eventname == "\\mod_forum\\event\\discussion_created") {
+        if ($entry->eventname == '\mod_forum\event\discussion_created') {
             $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
             $entry->post = $DB->get_record("forum_posts", array("discussion" => $entry->objectid, "parent" => 0));
         }
-        if ($entry->eventname == "\\mod_forum\\event\\post_created") {
+        if ($entry->eventname == '\mod_forum\event\post_created') {
             $entry->post = $DB->get_record("forum_posts", array("id" => $entry->objectid));
             $entry->discussion = $DB->get_record("forum_discussions", array("id" => $entry->post->discussion));
+        }
+
+        if (isset($entry->courseid)) {
+            // Check if any enrolled users are using edumessenger.
+            //error_log('SELECT COUNT(eue.id) FROM {edumessenger_userid_enabled} AS eue, {user_enrolments} AS ue, {enrol} AS e WHERE eue.userid=ue.userid AND ue.enrolid=e.id AND e.courseid=' . $entry->courseid);
+            $using = $DB->count_records_sql('SELECT COUNT(eue.id) FROM {edumessenger_userid_enabled} AS eue, {user_enrolments} AS ue, {enrol} AS e WHERE eue.userid=ue.userid AND ue.enrolid=e.id AND e.courseid=?', array($entry->courseid));
+            if ($using == 0) { return null; }
         }
         if (count($filter) > 0) {
             return $entry;
@@ -215,5 +213,25 @@ class local_edumessenger_taskhelper {
     public function messages_show() {
         echo "===== Debug =====<br />\n";
         echo "-- " . implode("\n<br />-- ", $this->messages) . "\n\n";
+    }
+    public function get_filter() {
+        return array(
+            '\core\event\course_created',
+            '\core\event\course_deleted',
+            '\core\event\group_created',
+            '\core\event\group_deleted',
+            '\core\event\group_member_added',
+            '\core\event\group_member_removed',
+            '\core\event\course_module_created',
+            '\core\event\course_module_deleted',
+            '\mod_forum\event\discussion_created',
+            '\mod_forum\event\discussion_deleted',
+            // '\mod_forum\event\assessable_uploaded',
+            '\mod_forum\event\post_updated',
+            '\mod_forum\event\post_created',
+            '\mod_forum\event\post_deleted',
+            '\core\event\message_sent',
+            '\core\event\message_deleted',
+        );
     }
 }

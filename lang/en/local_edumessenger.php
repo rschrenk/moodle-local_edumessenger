@@ -44,6 +44,10 @@ $string['token:failed'] = 'Connection error';
 $string['lbl:justclick'] = 'Just click the following button!';
 $string['lbl:createwebservicetoken'] = 'Go to <a href="{wwwroot}/admin/webservice/tokens.php?action=create">Webservice Tokens</a>, create one and make sure you select a user with administrative privileges and the Webservice \'eduMessenger\'!';
 
+$string['privacy:metadata:edumessenger_userid_enabled'] = 'Stores whether you are using edumessenger or not.';
+$string['privacy:metadata:edumessenger_userid_enabled:enabled'] = 'The current status - 1 if you are using edumessenger, 0 if not';
+$string['privacy:metadata:edumessenger_userid_enabled:userid'] = 'Your userid within this Moodle-instance';
+
 $string['step1:head'] = 'Step 1 - Secure Communication';
 $string['step1:p1'] = 'You need two secret tokens to setup the communication between your Moodle and eduMessenger. One token authenticates you against eduMessenger Central, and the other one allows eduMessenger to interact with your Moodle.';
 $string['step1:p2'] = 'Click the following button to create your first token, or to change your existing one!';

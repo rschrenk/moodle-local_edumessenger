@@ -46,7 +46,6 @@ class local_edumessenger_external extends external_api {
         $k = array_keys($entries);
         return $entries[$k[0]]->amount;
     }
-
     /**
      * Returns description of method result value
      * @return external_description
@@ -54,6 +53,63 @@ class local_edumessenger_external extends external_api {
     public static function amount_returns() {
         return new external_value(PARAM_INT, 'Returns the amount of active users in your moodle instance.');
     }
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function enableuser_parameters() {
+        return new external_function_parameters(
+            array(
+                'entries' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'userid' => new external_value(PARAM_INT, 'id of user'),
+                            'enabled' => new external_value(PARAM_INT, '1 to enable, all other values to disable user'),
+                        )
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return array With all user operations.
+     */
+    public static function enableuser($entries) {
+        global $DB;
+        $params = self::validate_parameters(self::enableuser_parameters(), array('entries' => $entries));
+        $reply = array();
+        foreach($params['entries'] AS $entry) {
+            $entry = (object) $entry;
+            if (!isset($entry->userid) || $entry->userid == 0) continue;
+            $entry->enabled = (isset($entry->enabled) && $entry->enabled == 1) ? 1 : 0;
+            $hasrecord = $DB->record_exists('edumessenger_userid_enabled', array('userid' => $entry->userid));
+            if ($entry->enabled == 1 && !$hasrecord) {
+                $DB->insert_record('edumessenger_userid_enabled', (object)$entry);
+            } elseif($entry->enabled == 0 && $hasrecord) {
+                $DB->update_record('edumessenger_userid_enabled', (object)$entry);
+            }
+            $status = $DB->get_record('edumessenger_userid_enabled', array('userid' => $entry->userid));
+            $reply[$status->userid] = array('userid' => $status->userid, 'enabled' => $status->enabled);
+        }
+        return $reply;
+    }
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function enableuser_returns() {
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'userid' => new external_value(PARAM_INT, 'id of user', VALUE_REQUIRED),
+                    'enabled' => new external_value(PARAM_INT, '1 to enable, all other values to disable user', VALUE_REQUIRED),
+                )
+            )
+        );
+    }
+
     /**
      * Returns description of method parameters
      * @return external_function_parameters

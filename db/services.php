@@ -32,6 +32,13 @@ $functions = array(
         'description' => 'Returns the amount of active users in this moodle.',
         'type'        => 'read',
     ),
+    'local_edumessenger_enableuser' => array(
+        'classname'   => 'local_edumessenger_external',
+        'methodname'  => 'enableuser',
+        'classpath'   => 'local/edumessenger/externallib.php',
+        'description' => 'Enables or disables a user for the edumessenger service.',
+        'type'        => 'write',
+    ),
     'local_edumessenger_ping' => array(
         'classname'   => 'local_edumessenger_external',
         'methodname'  => 'ping',
@@ -47,6 +54,7 @@ $services = array(
     'eduMessenger' => array(
         'functions' => array (
             'local_edumessenger_amount',
+            'local_edumessenger_enableuser',
             'local_edumessenger_logout',
             'local_edumessenger_ping',
             'core_course_delete_courses',
