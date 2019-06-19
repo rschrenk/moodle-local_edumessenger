@@ -14,25 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// THIS FILE IS DEPRECATED FOR EDUMESSENGER 6
-
 /**
- * Links and settings
  * @package    local_edumessenger
- * @copyright  2017 Digital Education Society (http://www.dibig.at)
+ * @copyright  2019 Digital Education Society (http://www.dibig.at)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+header('Access-Control-Allow-Origin: *');
 
-if (isset($settings)) {
-    $settings->add(
-        new admin_setting_configcheckbox(
-            'local_edumessenger/allowpush',
-            get_string('settings:allowpush', 'local_edumessenger'),
-            get_string('settings:allowpush:description', 'local_edumessenger'),
-            1,
-            PARAM_INT
-        )
-    );
-}
+define('MOODLE_INTERNAL', '1');
+// Dummy as is used in version.php
+define('MATURITY_STABLE', '');
+
+require_once('version.php');
+
+echo $plugin->version;

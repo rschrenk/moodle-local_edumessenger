@@ -23,6 +23,208 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+/**
+ * Class to handle general functions.
+ *
+ * @package    local_edumessenger
+ * @copyright  2019 Digital Education Society (http://www.dibig.at)
+ * @author     Robert Schrenk
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class local_edumessenger_lib {
+    // This cache helps to load certain objects from database only once.
+    public static $cache = array();
+    public static $verifieduserid = 0;
+    /**
+     * Check a token for validity.
+     * Sets the verified_userid token is valid.
+     * @param userid userid the token belongs to
+     * @param token token to check
+     * @return true if token is valid.
+     */
+    public static function check_token($userid, $edmtoken) {
+        global $DB, $USER;
+        // If there is a logged in user and he differs from userid, log him out.
+        if ($USER->id > 0 && !isguestuser($USER) && $USER->id != $userid) {
+            require_logout();
+            global $PAGE;
+            redirect($PAGE->url);
+            die();
+        }
+        $entry = $DB->get_record('local_edumessenger_tokens',
+                    array(
+                        'userid' => $userid,
+                        'edmtoken' => $edmtoken)
+                    );
+        if (!empty($entry->userid) && $entry->userid == $userid) {
+            self::verified_userid($userid);
+            $entry->used = time();
+            $DB->update_record('local_edumessenger_tokens', $entry);
+            self::user_login();
+            return true;
+        }
+        return false;
+    }
+    /**
+     * Creates a user token.
+     * @return user token.
+     */
+    public static function create_token() {
+        global $DB, $USER;
+        if ($USER->id < 2) {
+            // We do not allow guest users to create a token.
+            return '';
+        }
+        $tokenobject = (object) array(
+            'userid' => $USER->id,
+            'token' => md5(date('Ymdhis') . json_encode($USER)),
+            'created' => time(),
+            'used' => 0,
+        );
+        $tokenobject->id = $DB->insert_record('local_edumessenger_tokens', $tokenobject);
+        if (!empty($tokenobject->id)) {
+            return $tokenobject->edmtoken;
+        } else {
+            return '';
+        }
+    }
+    /**
+     * Get certain item from cache or database.
+     * @param type of object
+     * @param id of object
+     */
+    public static function get_cache($type, $id) {
+        if (!isset(self::$cache[$type])) {
+            self::$cache[$type] = array();
+        }
+        if (isset(self::$cache[$type][$id])) {
+            return self::$cache[$type][$id];
+        }
+        global $CFG, $DB;
+        switch ($type) {
+            case 'ctxforums':
+                $forum = self::get_cache('forums', $id);
+                require_once($CFG->dirroot . '/mod/forum/lib.php');
+                $cm = get_coursemodule_from_instance('forum', $id, $forum->course);
+                self::$cache[$type][$id] = context_module::instance($cm->id);
+            break;
+            case 'ctxusers':
+                self::$cache[$type][$id] = context_user::instance($id, IGNORE_MISSING);
+            break;
+            case 'discussions':
+                self::$cache[$type][$id] = $DB->get_record('forum_discussions', array('id' => $id));
+            break;
+            case 'forums':
+                self::$cache[$type][$id] = $DB->get_record('forum', array('id' => $id));
+            break;
+            case 'users':
+                self::$cache[$type][$id] = $DB->get_record('user', array('id' => $id));
+            break;
+        }
+        return self::$cache[$type][$id];
+    }
+    /**
+     * Enhance a discussion-object
+     * @param discussion to attach info to.
+     */
+    public static function enhance_discussion(&$discussion) {
+        global $CFG;
+        $discussion->discussionid = $discussion->discussion;
+        $forum = self::get_cache('forums', $discussion->forumid);
+        $discussion->courseid = $forum->course;
+        $user = self::get_cache('users', $discussion->userid);
+        $context = self::get_cache('ctxusers', $discussion->userid);
+
+        $discussion->userfullname = fullname($user, true);
+        if (!empty($context->id)) {
+            $discussion->userpictureurl = $CFG->wwwroot . '/pluginfile.php/' . $context->id . '/user/icon';
+        }
+    }
+    /**
+     * Enhance a message-object with additional data.
+     * @param message object to attach info to.
+     */
+    public static function enhance_message(&$message) {
+        global $CFG, $DB, $USER;
+        $message->messageid = $message->id;
+        $message->userid = $message->useridfrom;
+        // Userfullname.
+        $user = self::get_cache('users', $message->userid);
+        $message->userfullname = fullname($user, true);
+        // Userpictureurl.
+        $usercontext = self::get_cache('ctxusers', $message->userid);
+        if (!empty($usercontext->id)) {
+            $message->userpictureurl = $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon';
+        }
+        // Get rid of edm-watermark
+        if (strpos($message->fullmessagehtml, '<div class="watermark"') > 0) {
+            $message->fullmessagehtml = substr($message->fullmessagehtml, 0, strpos($message->fullmessagehtml, '<div class="watermark"'));
+        }
+        if (empty($message->fullmessagehtml)) $message->fullmessagehtml = $message->fullmessage;
+    }
+    /**
+     * Enhance a post-object with additional data.
+     * @param post object to attach info to.
+     */
+    public static function enhance_post(&$post) {
+        global $CFG, $DB, $USER;
+        $post->postid = $post->id;
+        $discussion = self::get_cache('discussions', $post->discussion);
+        $post->discussionid = $post->discussion;
+        $post->forumid = $discussion->forum;
+        $forum = self::get_cache('forums', $post->forumid);
+        $post->courseid = $forum->course;
+        // Userfullname.
+        $user = self::get_cache('users', $post->userid);
+        $post->userfullname = fullname($user, true);
+        // Userpictureurl.
+        $usercontext = self::get_cache('ctxusers', $post->userid);
+        if (!empty($usercontext->id)) {
+            $post->userpictureurl = $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon';
+        }
+        // Get rid of edm-watermark
+        if (strpos($post->message, '<div class="watermark"') > 0) {
+            $post->message = substr($post->message, 0, strpos($post->message, '<div class="watermark"'));
+        }
+        // Scores.
+        require_once($CFG->dirroot . '/rating/lib.php');
+        $forum = self::get_cache('forums', $post->forumid);
+        $ratingoptions = new stdClass;
+        $ratingoptions->context = self::get_cache('ctxforums', $post->forumid);
+        $ratingoptions->component = 'mod_forum';
+        $ratingoptions->ratingarea = 'post';
+        $ratingoptions->items = array($post);
+        $ratingoptions->aggregate = $forum->assessed;//the aggregation method
+        $ratingoptions->scaleid = $forum->scale;
+        $ratingoptions->userid = $USER->id;
+        $ratingoptions->assesstimestart = $forum->assesstimestart;
+        $ratingoptions->assesstimefinish = $forum->assesstimefinish;
+        $rm = new rating_manager();
+        $rm->get_ratings($ratingoptions);
+    }
+
+    public static function user_login() {
+        global $CFG, $DB, $USER;
+        $userid = self::verified_userid();
+        $user = $DB->get_record('user', array('id' => $userid));
+        if (empty($user->id)) return;
+        if (isguestuser($user)) return;
+        if (empty($user->confirmed)) return;
+        if ($USER->id != $userid) {
+            complete_user_login($user);
+        }
+        return $user;
+    }
+    public static function verified_userid($userid = '') {
+        if (!empty($userid)) {
+            self::$verifieduserid = $userid;
+        }
+        return empty(self::$verifieduserid) ? 0 : self::$verifieduserid;
+    }
+}
+
+
+// DEPRECATED WITH EDM6
 class local_edumessenger {
     public function __construct() {
         global $DB;

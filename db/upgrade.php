@@ -16,7 +16,7 @@
 
 /**
  * @package    local_edumessenger
- * @copyright  2018 Digital Education Society (http://www.dibig.at)
+ * @copyright  2019 Digital Education Society (http://www.dibig.at)
  * @author     Robert Schrenk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,9 +27,7 @@ function xmldb_local_edumessenger_upgrade($oldversion=0) {
     global $DB;
     $dbman = $DB->get_manager();
 
-    $checkversion = 2018110201;
-    error_log('local_edumessenger versionupgrade from ' . $oldversion . ' to ' . $checkversion);
-    if ($oldversion < $checkversion) {
+    if ($oldversion < 2018110201) {
         $table = new xmldb_table('edumessenger_userid_enabled');
 
         // Adding fields to table edumessenger_userid_enabled.
@@ -46,7 +44,30 @@ function xmldb_local_edumessenger_upgrade($oldversion=0) {
         }
 
         // Edumessenger savepoint reached.
-        upgrade_plugin_savepoint(true, $checkversion, 'local', 'edumessenger');
+        upgrade_plugin_savepoint(true, 2018110201, 'local', 'edumessenger');
     }
+    if ($oldversion < 2019022300) {
+        // Define table local_edumessenger_tokens to be created.
+        $table = new xmldb_table('local_edumessenger_tokens');
+
+        // Adding fields to table local_edumessenger_tokens.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('edmtoken', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('redeemed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('created', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+        // Adding keys to table local_edumessenger_tokens.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        // Conditionally launch create table for local_edumessenger_tokens.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Edumessenger savepoint reached.
+        upgrade_plugin_savepoint(true, 2019022300, 'local', 'edumessenger');
+    }
+
     return true;
 }

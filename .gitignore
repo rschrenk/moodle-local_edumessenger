@@ -1,2 +1,4 @@
 .DS_Store
 nbproject/
+.remote-sync.json
+old/
