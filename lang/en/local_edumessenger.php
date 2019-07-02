@@ -39,3 +39,5 @@ $string['privacy:metadata:edumessenger_userid_enabled:userid'] = 'Your userid wi
 
 $string['settings:allowpush'] = 'Allow push notifications to be sent to eduMessenger';
 $string['settings:allowpush:description'] = 'If you allow push notifications to be sent through our service please be aware that this data may be transferred through non-EU servers to Apple (iOS-Devices) and Google (Android-Devices)!';
+
+$string['watermark'] = 'This message was sent via <a href="https://www.edumessenger.org" target="_blank">eduMessenger</a>';

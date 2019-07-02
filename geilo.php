@@ -35,15 +35,17 @@ class local_edumessenger_geilo {
         switch ($data->act) {
             case 'create_discussion':
                 // forum_user_can_create_discussion() --> line ??
+                local_edumessenger_lib::add_watermark($data->message, 1);
             break;
             case 'create_message':
                 $ismember = $DB->get_record('message_conversation_members', array('userid' => $USER->id, 'conversationid' => $data->conversationid));
                 if (!empty($ismember->id)) {
+                    local_edumessenger_lib::add_watermark($data->message, $data->messageformat);
                     if (local_edumessenger_lib::get_version() > 2018120300) { // Moodle 3.6
                         require_once($CFG->dirroot . '/message/lib.php');
                         require_once($CFG->dirroot . '/message/classes/api.php');
                         // Seems to be API in Moodle 3.7, not 3.5
-                        $createdmessage = core_message\api::send_message_to_conversation($USER->id, $data->conversationid, $data->message, $data->messageformat);
+                        $createdmessage = (object)core_message\api::send_message_to_conversation($USER->id, $data->conversationid, $data->message, $data->messageformat);
                         $reply->message = $createdmessage;
                     } elseif(local_edumessenger_lib::get_version() > 2016052300) { // Moodle 3.2
                         require_once($CFG->dirroot . "/message/lib.php");
@@ -66,6 +68,7 @@ class local_edumessenger_geilo {
             break;
             case 'create_post':
                 // forum_user_can_post() --> line 182 in forum/post.php
+                local_edumessenger_lib::add_watermark($data->message, 1);
             break;
             case 'get_conversation_messages':
                 $ismember = $DB->get_record('message_conversation_members', array('userid' => $USER->id, 'conversationid' => $data->conversationid));
@@ -73,9 +76,9 @@ class local_edumessenger_geilo {
                     if (local_edumessenger_lib::get_version() > 2018120300) { // Moodle 3.6
                         require_once($CFG->dirroot . '/message/lib.php');
                         require_once($CFG->dirroot . '/message/classes/api.php');
-                        $reply->messages = \core_message\api::get_conversation_messages($USER->id, $data->conversationid);
+                        $reply->messages = \core_message\api::get_conversation_messages($USER->id, $data->conversationid, null, null, null, $data->lastmodified);
                     } elseif(local_edumessenger_lib::get_version() > 2016052300) { // Moodle 3.2
-                        $reply->messages = $DB->get_records('messages', array('conversationid' => $data->conversationid));
+                        $reply->messages = $DB->get_records_sql('SELECT * FROM {messages} WHERE conversationid=? AND timecreated>?', array($data->conversationid, $data->timemodified));
                         //$reply->messages = $DB->get_records_sql('SELECT * FROM {message} WHERE useridto=? OR useridfrom=?', array($USER->id, $USER->id));
                     } else {
                         $reply->error = get_string('incompatible_moodle_version', 'local_edumessenger') . ': ' . local_edumessenger_lib::get_version();
@@ -104,6 +107,9 @@ class local_edumessenger_geilo {
                     }
                     foreach ($conversation->messages AS &$message) {
                         local_edumessenger_lib::enhance_message($message);
+                    }
+                    foreach ($conversation->members AS &$member) {
+                        local_edumessenger_lib::enhance_user($member);
                     }
                 }
             break;

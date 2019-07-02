@@ -36,6 +36,26 @@ class local_edumessenger_lib {
     public static $cache = array();
     public static $verifieduserid = 0;
     /**
+     * Adds a watermark to a text.
+     * @param text the text to add the watermark to
+     * @param textformat the textformat (0 ... clean, 1 ... html, 2 ... markdown)
+     */
+    public static function add_watermark(&$text, $textformat = 1) {
+        $msg = get_string('watermark', 'local_edumessenger');
+
+        switch ($textformat) {
+            case 0:
+                $text .= '\n\r\n\r---------------------------------------------------------------------\n\r\n\r' . $msg;
+            break;
+            case 1:
+                $text .= '<div class="watermark"><hr />' . $msg . '</div>';
+            break;
+            case 2:
+                $text .= '\n\r\n\r---------------------------------------------------------------------\n\r\n\r' . $msg;
+            break;
+        }
+    }
+    /**
      * Check a token for validity.
      * Sets the verified_userid token is valid.
      * @param userid userid the token belongs to
@@ -154,6 +174,7 @@ class local_edumessenger_lib {
         global $CFG, $DB, $USER;
         $message->messageid = $message->id;
         $message->userid = $message->useridfrom;
+        $message->enhanced = true;
         // Userfullname.
         $user = self::get_cache('users', $message->userid);
         $message->userfullname = fullname($user, true);
@@ -163,9 +184,12 @@ class local_edumessenger_lib {
             $message->userpictureurl = $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon';
         }
         // Get rid of edm-watermark
-        if (strpos($message->fullmessagehtml, '<div class="watermark"') > 0) {
-            $message->fullmessagehtml = substr($message->fullmessagehtml, 0, strpos($message->fullmessagehtml, '<div class="watermark"'));
-        }
+        $msg = explode('<div class="watermark"', $message->fullmessagehtml);
+        $message->fullmessagehtml = $msg[0];
+
+        // Get rid of system-message
+        $msg = explode('---------------------------------------------------------------------', $message->fullmessagehtml);
+        $message->fullmessagehtml = $msg[0];
         if (empty($message->fullmessagehtml)) $message->fullmessagehtml = $message->fullmessage;
     }
     /**
@@ -207,6 +231,25 @@ class local_edumessenger_lib {
         $ratingoptions->assesstimefinish = $forum->assesstimefinish;
         $rm = new rating_manager();
         $rm->get_ratings($ratingoptions);
+    }
+    /**
+     * Enhance a user-object with additional data.
+     * @param user object to attach info to.
+     */
+    public static function enhance_user(&$user) {
+        global $CFG, $DB;
+        if (empty($user->userid)) {
+            $user->userid = $user->id;
+        }
+        // Userfullname.
+        $_user = self::get_cache('users', $user->userid);
+        $_user->userfullname = fullname($_user, true);
+        $usercontext = self::get_cache('ctxusers', $user->userid);
+        $fields = array('firstname', 'lastname', 'userfullname');
+        foreach($fields AS $field) {
+            $user->{$field} = $_user->{$field};
+        }
+        $user->userpictureurl = !empty($usercontext->id) ? $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon' : '';
     }
 
     public static function user_login() {
