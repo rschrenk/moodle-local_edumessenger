@@ -26,6 +26,9 @@ $string['data:manage'] = 'eduMessenger Registration';
 $string['edumessenger:manage'] = 'Manage eduMessenger';
 
 $string['cron:title'] = 'eduMessenger Cron';
+
+$string['incompatible_moodle_version'] = 'Your moodle version is incompatible for this function';
+
 $string['login:required_login'] = 'Redirect you to login.';
 $string['login:required_logout'] = 'Doing a logout of the formerly logged in user.';
 $string['login:successful'] = 'Successful login.';

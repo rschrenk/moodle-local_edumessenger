@@ -124,6 +124,12 @@ class local_edumessenger_lib {
         return self::$cache[$type][$id];
     }
     /**
+     * Returns the moodle version.
+     */
+    public static function get_version() {
+        return get_config('', 'version');
+    }
+    /**
      * Enhance a discussion-object
      * @param discussion to attach info to.
      */
