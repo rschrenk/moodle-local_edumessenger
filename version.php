@@ -34,3 +34,6 @@ $plugin->component = 'local_edumessenger';
 $plugin->cron     = 0;
 $plugin->release = '1.4 (2018110600)';
 $plugin->maturity = MATURITY_STABLE;
+$plugin->dependencies = array(
+    'local_eduauth' => 2019071000,
+);

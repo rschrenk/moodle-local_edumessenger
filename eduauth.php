@@ -16,19 +16,16 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot . '/local/edumessenger/lib.php');
-
 /**
  * @package    local_edumessenger
  * @copyright  2019 Digital Education Society (http://www.dibig.at)
  * @author     Robert Schrenk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class local_edumessenger_geilo {
-    public static function act($data) {
+class local_edumessenger_eduauth {
+    public static function callforward($data, &$reply) {
         global $CFG, $DB, $USER;
         require_login();
-        $reply = (object) array();
         if (empty($data->act)) {
             return $reply;
         }
@@ -50,7 +47,13 @@ class local_edumessenger_geilo {
                     } elseif(local_edumessenger_lib::get_version() > 2016052300) { // Moodle 3.2
                         require_once($CFG->dirroot . "/message/lib.php");
                         $touser = $DB->get_record('user', array('id' => $data->touserid), '*', IGNORE_MISSING);
-                        $messageid = message_post_message($USER, $touser, $data->message, $data->messageformat);
+                        $messageid = 0;
+                        try {
+                            $messageid = message_post_message($USER, $touser, $data->message, $data->messageformat);
+                        } catch(Exception $e) {
+                            $reply->exception = $e;
+                        }
+
                         if ($messageid > 0) {
                             $reply->message = $DB->get_record('messages', array('id' => $messageid));
                         } else {
