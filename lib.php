@@ -245,7 +245,7 @@ class local_edumessenger_lib {
         $_user = self::get_cache('users', $user->userid);
         $_user->userfullname = fullname($_user, true);
         $usercontext = self::get_cache('ctxusers', $user->userid);
-        $fields = array('firstname', 'lastname', 'userfullname');
+        $fields = array('email', 'firstname', 'lastname', 'userfullname');
         foreach($fields AS $field) {
             $user->{$field} = $_user->{$field};
         }

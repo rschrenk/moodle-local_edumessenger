@@ -22,6 +22,9 @@ defined('MOODLE_INTERNAL') || die;
  * @author     Robert Schrenk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+require_once($CFG->dirroot . '/local/edumessenger/lib.php');
+
 class local_edumessenger_eduauth {
     public static function callforward($data, &$reply) {
         global $CFG, $DB, $USER;
