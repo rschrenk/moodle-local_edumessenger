@@ -34,8 +34,33 @@ class local_edumessenger_eduauth {
         }
         switch ($data->act) {
             case 'create_discussion':
-                // forum_user_can_create_discussion() --> line ??
-                local_edumessenger_lib::add_watermark($data->message, 1);
+                require_once($CFG->dirroot . '/mod/forum/lib.php');
+                $forum = $DB->get_record('forum', array('id' => $data->forumid), '*', MUST_EXIST);
+                $group = null;
+                if (!empty($data->groupd)) $group = $DB->get_record('groups', array('id' => $data->groupid), '*', MUST_EXIST);
+                if (forum_user_can_post_discussion($forum, $group)) {
+                    local_edumessenger_lib::add_watermark($data->message, 1);
+                    $discussion = (object) array(
+                        'groupid' => !empty($group->id) ? $group->id : -1,
+                        'userid' => $USER->id,
+                        'created' => time(),
+                        'modified' => time(),
+                        'subject' => $data->topic, // required for post
+                        'name' => $data->topic, // required for discussion
+                        'message' => $data->message,
+                        'messageformat' => 1, // We force HTML-format
+                        'messagetrust' => true, // we do not know what this is! - there is no documentation on this!
+                        'attachments' => null, // @todo add attachments filearea here
+                        'forum' => $forum->id,
+                        'course' => $forum->course,
+                        'mailnow' => 0,
+                    );
+                    $reply->discussionid = forum_add_discussion($discussion);
+                    if (!empty($reply->discussionid)) {
+                        $reply->discussion = $DB->get_record('forum_discussions', array('id' => $reply->discussionid));
+                        local_edumessenger_lib::enhance_discussion($reply->discussion);
+                    }
+                }
             break;
             case 'create_message':
                 $ismember = $DB->get_record('message_conversation_members', array('userid' => $USER->id, 'conversationid' => $data->conversationid));
@@ -74,7 +99,40 @@ class local_edumessenger_eduauth {
             break;
             case 'create_post':
                 // forum_user_can_post() --> line 182 in forum/post.php
-                local_edumessenger_lib::add_watermark($data->message, 1);
+                require_once($CFG->dirroot . '/mod/forum/lib.php');
+                $discussion = $DB->get_record('forum_discussions', array('id' => $data->discussionid), '*', MUST_EXIST);
+                $reply->discussion = $discussion;
+                $forum = $DB->get_record('forum', array('id' => $discussion->forum), '*', MUST_EXIST);
+                $reply->forum = $forum;
+
+                if (forum_user_can_post($forum, $discussion)) {
+                    $origmessage = $data->message;
+                    local_edumessenger_lib::add_watermark($data->message, 1);
+                    $post = (object) array(
+                        'userid' => $USER->id,
+                        'created' => time(),
+                        'modified' => time(),
+                        'subject' => mb_strimwidth(strip_tags($origmessage), 0, 30, "..."), // required for post
+                        'message' => $data->message,
+                        'messageformat' => 1, // We force HTML-format
+                        'messagetrust' => true, // we do not know what this is! - there is no documentation on this!
+                        'attachments' => null, // @todo add attachments filearea here
+                        'discussion' => $discussion->id,
+                        'forum' => $forum->id,
+                        'course' => $forum->course,
+                        'mailnow' => 0,
+                    );
+                    $reply->postid = forum_add_new_post($post, array());
+                    if (!empty($reply->postid)) {
+                        $reply->post = $DB->get_record('forum_posts', array('id' => $reply->postid));
+                        local_edumessenger_lib::enhance_post($reply->post);
+                        /*
+                        $reply->post->courseid = $forum->course;
+                        $reply->post->forumid = $forum->id;
+                        $reply->post->discussionid = $discussion->id;
+                        */
+                    }
+                }
             break;
             case 'get_conversation_messages':
                 $ismember = $DB->get_record('message_conversation_members', array('userid' => $USER->id, 'conversationid' => $data->conversationid));
