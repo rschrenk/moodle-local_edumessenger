@@ -16,33 +16,22 @@
 
 /**
  * @package    local_edumessenger
- * @copyright  2017 Digital Education Society (http://www.dibig.at)
+ * @copyright  2019 Digital Education Society (http://www.dibig.at)
  * @author     Robert Schrenk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+header("access-control-allow-origin: *");
 
-namespace local_edumessenger\task;
+require_once("../../config.php");
 
-defined('MOODLE_INTERNAL') || die;
+$oursecrettoken = get_config('local_edumessenger', 'oursecrettoken');
+$proveoursecrettoken = required_param('oursecrettoken', PARAM_TEXT);
+$secrettoken = required_param('secrettoken', PARAM_TEXT);
 
-require_once($CFG->dirroot."/local/edumessenger/classes/task/taskhelper.php");
-
-class local_edumessenger_cron extends \core\task\scheduled_task {
-    public function get_name() {
-        // Shown in admin screens.
-        return get_string('cron:title', 'local_edumessenger');
-    }
-
-    public function execute() {
-        global $DB;
-        $items = $DB->get_records('local_edumessenger_queue', array());
-        foreach ($items AS $item) {
-            $pushobject = json_decode($item);
-            // Now send it.
-        }
-        /*
-        $helper = new local_edumessenger_taskhelper();
-        $helper->cron();
-        */
-    }
+if (!empty($oursecrettoken) && $oursecrettoken == $proveoursecrettoken) {
+    set_config('secrettoken', $secrettoken, 'local_edumessenger');
+    $DB->delete_records('config_plugins', array('plugin' => 'local_edumessenger', 'name' => 'outsecrettoken'));
+    echo "1";
+} else {
+    echo "0";
 }

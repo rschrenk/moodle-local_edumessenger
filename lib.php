@@ -35,6 +35,7 @@ class local_edumessenger_lib {
     // This cache helps to load certain objects from database only once.
     public static $cache = array();
     public static $verifieduserid = 0;
+    private static $URLCENTRAL = 'https://messenger.dibig.at/v-6/service.php';
     /**
      * Adds a watermark to a text.
      * @param text the text to add the watermark to
@@ -155,9 +156,10 @@ class local_edumessenger_lib {
      */
     public static function enhance_discussion(&$discussion) {
         global $CFG;
-        $discussion->discussionid = $discussion->discussion;
+        $discussion->discussionid = $discussion->discussion | $discussion->id;
         $forum = self::get_cache('forums', $discussion->forumid);
-        $discussion->courseid = $forum->course;
+        $discussion->forumid = $forum->id | $discussion->forum;
+        $discussion->courseid = $forum->course | $discussion->course;
         $user = self::get_cache('users', $discussion->userid);
         $context = self::get_cache('ctxusers', $discussion->userid);
 
@@ -250,6 +252,81 @@ class local_edumessenger_lib {
             $user->{$field} = $_user->{$field};
         }
         $user->userpictureurl = !empty($usercontext->id) ? $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon' : '';
+    }
+    private static function secretToken() {
+        global $CFG;
+        $secret = get_config('local_edumessenger', 'secrettoken');
+        if (empty($secret)) {
+            $oursecrettoken = md5(rand(0, 999) . $CFG->wwwroot . time());
+            set_config('oursecrettoken', $oursecrettoken, 'local_edumessenger');
+            $data = array(
+                'host' => $CFG->wwwroot,
+                'act' => 'get_token',
+                'oursecrettoken' => $oursecrettoken,
+                'release' => $CFG->release,
+                'plugin' => get_config('local_edumessenger', 'version')
+            );
+
+            $payload = json_encode($data);
+            $ch = curl_init(self::$URLCENTRAL);
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
+            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+            // Return response instead of printing.
+            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+            // Send request.
+            $result = curl_exec($ch);
+            curl_close($ch);
+
+            $chk = json_decode($result);
+            return '';
+        } else {
+            return $secret;
+        }
+    }
+
+    /**
+     * Send a push notification from a qitem.
+     * @param qitem
+     */
+    public static function sendQitem($qitem) {
+        global $CFG, $DB;
+        if (!empty($qitem->subject) && !empty($qitem->message) && !empty($qitem->targetusers)) {
+            // Make curl request to eduMessenger-central.
+            $secrettoken = self::secretToken();
+            if (empty($secrettoken)) {
+                // We can not send and abort.
+                // As the token has been requested in the background the message will be sent upon next cron.
+            } else {
+                $chk = false;
+                $data = array(
+                    'host' => $CFG->wwwroot,
+                    'secret' => $secrettoken,
+                    'qitem' => $qitem,
+                    'release' => $CFG->release,
+                    'plugin' => get_config('local_edumessenger', 'version')
+                );
+
+                $payload = json_encode($data);
+                $ch = curl_init(self::$URLCENTRAL);
+                curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
+                curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+                // Return response instead of printing.
+                curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+                // Send request.
+                $result = curl_exec($ch);
+                curl_close($ch);
+
+                $chk = json_decode($result);
+
+                // Delete queue item if curl was successful.
+                if (!empty($chk->stored) && !empty($qitem->id)) {
+                    $DB->delete_records('local_edumessenger_queue', array('id' => $qitem->id));
+                }
+            }
+        } elseif (!empty($qitem->id)) {
+            // Invalid queue-item - remove it.
+            $DB->delete_records('local_edumessenger_queue', array('id' => $qitem->id));
+        }
     }
 
     public static function user_login() {
@@ -366,7 +443,7 @@ class local_edumessenger {
             'secret' => $this->secret(),
             'payload' => $payload,
         );
-        $this->message('Using Central: ' . $this->url . '/services/service.php');
+        $this->message('Using Central: ' . self->$URLCENTRAL . '/service.php');
         $this->message('Request: ' . json_encode($data));
 
         $payload = json_encode($data);

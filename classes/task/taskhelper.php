@@ -25,7 +25,7 @@ namespace local_edumessenger\task;
 
 defined('MOODLE_INTERNAL') || die;
 
-class local_edumessenger_taskhelper {
+class taskhelper {
     public function __construct() {
         global $DB;
         $this->messages = array();

@@ -59,6 +59,20 @@ class local_edumessenger_eduauth {
                     if (!empty($reply->discussionid)) {
                         $reply->discussion = $DB->get_record('forum_discussions', array('id' => $reply->discussionid));
                         local_edumessenger_lib::enhance_discussion($reply->discussion);
+
+                        // If we have potential users check who can access this discussion.
+                        if (!empty($data->potentialusers) && count($data->potentialusers) > 0) {
+                            $reply->discussion->accessusers = array();
+                            $course = get_course($forum->course);
+                            $cm = get_fast_modinfo($course)->instances['forum'][$forum->id];
+                            $context = \context_module::instance($cm->id);
+                            foreach ($data->potentialusers AS $potentialuserid) {
+                                $user = \core_user::get_user($potentialuserid);
+                                if (forum_user_can_see_discussion($forum, $reply->discussion, $context, $user)) {
+                                    $reply->discussion->accessusers[] = $potentialuserid;
+                                }
+                            }
+                        }
                     }
                 }
             break;

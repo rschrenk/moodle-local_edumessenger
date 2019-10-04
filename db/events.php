@@ -23,6 +23,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+/*
 $events = array(
     "\\core\\event\\course_created",
     "\\core\\event\\course_deleted",
@@ -40,6 +41,13 @@ $events = array(
     "\\mod_forum\\event\\post_deleted",
     "\\core\\event\\message_sent",
     "\\core\\event\\message_deleted",
+);
+*/
+
+$events = array(
+    "\\mod_forum\\event\\discussion_created",
+    "\\mod_forum\\event\\post_created",
+    "\\core\\event\\message_sent",
 );
 
 $observers = array();
