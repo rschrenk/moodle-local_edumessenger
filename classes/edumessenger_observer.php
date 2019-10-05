@@ -29,10 +29,7 @@ class edumessenger_observer {
     public static function event($event) {
         global $CFG, $DB;
         require_once($CFG->dirroot . "/local/edumessenger/lib.php");
-        require_once($CFG->dirroot . "/local/edumessenger/classes/task/taskhelper.php");
-        $task = new \local_edumessenger\task\taskhelper();
-        // We have to prohibit debugmode as it would break our return value!
-        $task->debugmode = false;
+
         $entry = (object)$event->get_data();
 
         $pushobject = array(

@@ -38,7 +38,9 @@ class local_edumessenger_eduauth {
                 $forum = $DB->get_record('forum', array('id' => $data->forumid), '*', MUST_EXIST);
                 $group = null;
                 if (!empty($data->groupd)) $group = $DB->get_record('groups', array('id' => $data->groupid), '*', MUST_EXIST);
-                if (forum_user_can_post_discussion($forum, $group)) {
+                $cm = get_coursemodule_from_instance('forum', $forum->id, $forum->course);
+                $context = context_module::instance($cm->id);
+                if (forum_user_can_post_discussion($forum, $group, -1, $cm, $context)) {
                     local_edumessenger_lib::add_watermark($data->message, 1);
                     $discussion = (object) array(
                         'groupid' => !empty($group->id) ? $group->id : -1,
@@ -119,7 +121,12 @@ class local_edumessenger_eduauth {
                 $forum = $DB->get_record('forum', array('id' => $discussion->forum), '*', MUST_EXIST);
                 $reply->forum = $forum;
 
-                if (forum_user_can_post($forum, $discussion)) {
+                $course = get_course($forum->course);
+                $cm = get_coursemodule_from_instance('forum', $forum->id, $course->id);
+                $context = context_module::instance($cm->id);
+
+                global $USER;
+                if (forum_user_can_post($forum, $discussion, $USER, $cm, $course)) {
                     $origmessage = $data->message;
                     local_edumessenger_lib::add_watermark($data->message, 1);
                     $post = (object) array(
@@ -226,13 +233,14 @@ class local_edumessenger_eduauth {
                     // Load groups, forums that I can access.
                     foreach ($course->forums AS &$forum) {
                         $forum->cm = get_coursemodule_from_instance('forum', $forum->id, $course->id);
+                        $context = context_module::instance($cm->id);
                         if ($forum->cm->groupmode > 0) {
                             $forum->groups = groups_get_activity_allowed_groups($forum->cm, $USER->id);
                             foreach ($forum->groups AS &$group) {
-                                $group->cancreatepost = forum_user_can_post_discussion($forum, $group->id, -1, $forum->cm);
+                                $group->cancreatepost = forum_user_can_post_discussion($forum, $group->id, -1, $forum->cm, $context);
                             }
                         }
-                        $forum->cancreatepost = forum_user_can_post_discussion($forum, null, -1, $forum->cm);
+                        $forum->cancreatepost = forum_user_can_post_discussion($forum, null, -1, $forum->cm, $context);
                         $context = context_module::instance($forum->cm->id);
                         $forum->cancreatediscussion = has_capability('mod/forum:startdiscussion', $context);
                         $forum->canaccessallgroups = has_capability('moodle/site:accessallgroups', $context);

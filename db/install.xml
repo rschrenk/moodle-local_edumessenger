@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/edumessenger/db" VERSION="2018110200" COMMENT="XMLDB file for Moodle local/edumessenger"
+<XMLDB PATH="local/edumessenger/db" VERSION="20191005" COMMENT="XMLDB file for Moodle local/edumessenger"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
-<TABLES>
+  <TABLES>
     <TABLE NAME="local_edumessenger_tokens" COMMENT="Tokens that are in use">
-        <FIELDS>
-            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"/>
-            <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" />
-            <FIELD NAME="edmtoken" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="the token" />
-            <FIELD NAME="redeemed" TYPE="int" LENGTH="1" DEFAULT="0" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" />
-            <FIELD NAME="created" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" />
-        </FIELDS>
-        <KEYS>
-            <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key for edumessenger_userid_enabled"/>
-        </KEYS>
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="edmtoken" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="the token"/>
+        <FIELD NAME="redeemed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="created" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key for edumessenger_userid_enabled"/>
+      </KEYS>
     </TABLE>
-</TABLES>
+    <TABLE NAME="local_edumessenger_queue" COMMENT="Queue for push items">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="created" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="json" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
 </XMLDB>

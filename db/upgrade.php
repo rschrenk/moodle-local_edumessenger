@@ -69,5 +69,27 @@ function xmldb_local_edumessenger_upgrade($oldversion=0) {
         upgrade_plugin_savepoint(true, 2019022300, 'local', 'edumessenger');
     }
 
+    if ($oldversion < 2019022303) {
+        // Define table local_edumessenger_queue to be created.
+        $table = new xmldb_table('local_edumessenger_queue');
+
+        // Adding fields to table local_edumessenger_queue.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('created', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('json', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+
+        // Adding keys to table local_edumessenger_queue.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        // Conditionally launch create table for local_edumessenger_queue.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Edumessenger savepoint reached.
+        upgrade_plugin_savepoint(true, 2019022303, 'local', 'edumessenger');
+    }
+
+
     return true;
 }

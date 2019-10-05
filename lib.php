@@ -158,8 +158,8 @@ class local_edumessenger_lib {
         global $CFG;
         $discussion->discussionid = $discussion->discussion | $discussion->id;
         $forum = self::get_cache('forums', $discussion->forumid);
-        $discussion->forumid = $forum->id | $discussion->forum;
-        $discussion->courseid = $forum->course | $discussion->course;
+        $discussion->forumid = @$forum->id | $discussion->forum;
+        $discussion->courseid = @$forum->course | $discussion->course;
         $user = self::get_cache('users', $discussion->userid);
         $context = self::get_cache('ctxusers', $discussion->userid);
 
@@ -443,7 +443,7 @@ class local_edumessenger {
             'secret' => $this->secret(),
             'payload' => $payload,
         );
-        $this->message('Using Central: ' . self->$URLCENTRAL . '/service.php');
+        $this->message('Using Central: ' . $this->url . '/services/service.php');
         $this->message('Request: ' . json_encode($data));
 
         $payload = json_encode($data);
