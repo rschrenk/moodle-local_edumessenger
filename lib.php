@@ -156,10 +156,10 @@ class local_edumessenger_lib {
      */
     public static function enhance_discussion(&$discussion) {
         global $CFG;
-        $discussion->discussionid = $discussion->discussion | $discussion->id;
-        $forum = self::get_cache('forums', $discussion->forumid);
-        $discussion->forumid = @$forum->id | $discussion->forum;
-        $discussion->courseid = @$forum->course | $discussion->course;
+        $discussion->discussionid = $discussion->id;
+        $forum = self::get_cache('forums', $discussion->forum);
+        $discussion->forumid = $forum->id;
+        $discussion->courseid = $forum->course;
         $user = self::get_cache('users', $discussion->userid);
         $context = self::get_cache('ctxusers', $discussion->userid);
 
@@ -267,6 +267,8 @@ class local_edumessenger_lib {
                 'plugin' => get_config('local_edumessenger', 'version')
             );
 
+            error_log("GET TOKEN: " . print_r($data, 1));
+
             $payload = json_encode($data);
             $ch = curl_init(self::$URLCENTRAL);
             curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
@@ -290,6 +292,7 @@ class local_edumessenger_lib {
      */
     public static function sendQitem($qitem) {
         global $CFG, $DB;
+        error_log("SEND QUITEM: " . print_r($qitem, 1));
         if (!empty($qitem->subject) && !empty($qitem->message) && !empty($qitem->targetusers)) {
             // Make curl request to eduMessenger-central.
             $secrettoken = self::secretToken();

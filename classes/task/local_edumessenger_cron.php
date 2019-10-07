@@ -34,15 +34,7 @@ class local_edumessenger_cron extends \core\task\scheduled_task {
     }
 
     public function execute() {
-        global $DB;
-        $items = $DB->get_records('local_edumessenger_queue', array());
-        foreach ($items AS $item) {
-            $pushobject = json_decode($item);
-            // Now send it.
-        }
-        /*
         $helper = new local_edumessenger_taskhelper();
         $helper->cron();
-        */
     }
 }

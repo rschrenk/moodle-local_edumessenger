@@ -25,6 +25,16 @@ defined('MOODLE_INTERNAL') || die;
 
 $tasks = array(
     array(
+        'classname' => 'local_edumessenger\task\cron',
+        'blocking' => 0,
+        'minute' => '*',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*',
+    ),
+    // OLD TASK
+    array(
         'classname' => 'local_edumessenger\task\local_edumessenger_cron',
         'blocking' => 0,
         'minute' => '*',
