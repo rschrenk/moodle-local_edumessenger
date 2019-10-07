@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+// This file is used for the client-app to determin if the plugin is installed.
+
 /**
  * @package    local_edumessenger
  * @copyright  2019 Digital Education Society (http://www.dibig.at)

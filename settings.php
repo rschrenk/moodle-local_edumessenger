@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// THIS FILE IS DEPRECATED FOR EDUMESSENGER 6
-
 /**
  * Links and settings
  * @package    local_edumessenger
@@ -26,6 +24,7 @@
 defined('MOODLE_INTERNAL') || die;
 
 if (isset($settings)) {
+    // @TODO use this value to disable any communication to edumessenger-central
     $settings->add(
         new admin_setting_configcheckbox(
             'local_edumessenger/allowpush',

@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
+// @TODO this file is obsolete once edm6 is published.
+
+
 /**
  * This page does an automated login and redirects to another site.
  *
