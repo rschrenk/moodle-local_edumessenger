@@ -155,9 +155,13 @@ class local_edumessenger_lib {
      * @param discussion to attach info to.
      */
     public static function enhance_discussion(&$discussion) {
-        global $CFG;
+        global $CFG, $DB;
         if (empty($discussion)) return;
-        $discussion->discussionid = $discussion->id;
+        $discussion->discussionid = $discussion->discussion;
+        if (empty($discussion->forum)) {
+            $d = $DB->get_record('forum_discussions', array('id' => $discussion->discussion));
+            $discussion->forum = $d->forum;
+        }
         $forum = self::get_cache('forums', $discussion->forum);
         $discussion->forumid = $forum->id;
         $discussion->courseid = $forum->course;

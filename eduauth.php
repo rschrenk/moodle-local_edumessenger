@@ -184,9 +184,9 @@ class local_edumessenger_eduauth {
                     if (local_edumessenger_lib::get_version() > 2018120300) { // Moodle 3.6
                         require_once($CFG->dirroot . '/message/lib.php');
                         require_once($CFG->dirroot . '/message/classes/api.php');
-                        $conversation->messages = \core_message\api::get_conversation_messages($USER->id, $data->conversationid);
+                        $conversation->messages = \core_message\api::get_conversation_messages($USER->id, $conversation->conversationid);
                     } elseif(local_edumessenger_lib::get_version() > 2016052300) { // Moodle 3.2
-                        $conversation->messages = $DB->get_records('messages', array('conversationid' => $conversation->id));
+                        $conversation->messages = $DB->get_records('messages', array('conversationid' => $conversation->conversationid));
                     } else {
                         $reply->error = get_string('incompatible_moodle_version', 'local_edumessenger') . ': ' . local_edumessenger_lib::get_version();
                     }
@@ -237,10 +237,15 @@ class local_edumessenger_eduauth {
                         if (empty($forum->cm)) continue;
                         $context = context_module::instance($forum->cm->id);
                         if ($forum->cm->groupmode > 0) {
-                            $forum->groups = groups_get_activity_allowed_groups($forum->cm, $USER->id);
-                            foreach ($forum->groups AS &$group) {
+                            $groups = groups_get_activity_allowed_groups($forum->cm, $USER->id);
+                            $agroups = array();
+                            foreach ($groups AS $group) {
                                 $group->cancreatepost = forum_user_can_post_discussion($forum, $group->id, -1, $forum->cm, $context);
+                                $agroups[$group->name] = $group;
                             }
+                            //sort($agroups);
+                            //$forum->groups = array_values($agroups);
+                            $forum->groups = array_values($agroups);
                         }
                         $forum->cancreatepost = forum_user_can_post_discussion($forum, null, -1, $forum->cm, $context);
                         $context = context_module::instance($forum->cm->id);
