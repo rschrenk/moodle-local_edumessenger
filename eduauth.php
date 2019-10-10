@@ -233,7 +233,9 @@ class local_edumessenger_eduauth {
                     // Load groups, forums that I can access.
                     foreach ($course->forums AS &$forum) {
                         $forum->cm = get_coursemodule_from_instance('forum', $forum->id, $course->id);
-                        $context = context_module::instance($cm->id);
+                        // Perhaps this forum does not exist anymore?
+                        if (empty($forum->cm)) continue;
+                        $context = context_module::instance($forum->cm->id);
                         if ($forum->cm->groupmode > 0) {
                             $forum->groups = groups_get_activity_allowed_groups($forum->cm, $USER->id);
                             foreach ($forum->groups AS &$group) {

@@ -156,6 +156,7 @@ class local_edumessenger_lib {
      */
     public static function enhance_discussion(&$discussion) {
         global $CFG;
+        if (empty($discussion)) return;
         $discussion->discussionid = $discussion->id;
         $forum = self::get_cache('forums', $discussion->forum);
         $discussion->forumid = $forum->id;
@@ -253,10 +254,10 @@ class local_edumessenger_lib {
         }
         $user->userpictureurl = !empty($usercontext->id) ? $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon' : '';
     }
-    private static function secretToken() {
+    public static function secretToken($request = false, $debug = false) {
         global $CFG;
         $secret = get_config('local_edumessenger', 'secrettoken');
-        if (empty($secret)) {
+        if (empty($secret) || $request) {
             $oursecrettoken = md5(rand(0, 999) . $CFG->wwwroot . time());
             set_config('oursecrettoken', $oursecrettoken, 'local_edumessenger');
             $data = array(
@@ -267,18 +268,19 @@ class local_edumessenger_lib {
                 'plugin' => get_config('local_edumessenger', 'version')
             );
 
-            error_log("GET TOKEN: " . print_r($data, 1));
+            if ($debug) echo "GET TOKEN: " . print_r($data, 1) . "<br />\n";
+            if ($debug) echo "SEND TO " . self::$URLCENTRAL . "<br />\n";
 
             $payload = json_encode($data);
             $ch = curl_init(self::$URLCENTRAL);
             curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
-            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+            //curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
             // Return response instead of printing.
             curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
             // Send request.
             $result = curl_exec($ch);
             curl_close($ch);
-
+            if ($debug) echo "RESULT: " . $result . "<br />\n";
             $chk = json_decode($result);
             return '';
         } else {

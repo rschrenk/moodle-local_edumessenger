@@ -23,16 +23,30 @@
 header("access-control-allow-origin: *");
 
 require_once("../../config.php");
+require_once($CFG->dirroot . "/local/edumessenger/lib.php");
 
-$oursecrettoken = get_config('local_edumessenger', 'oursecrettoken');
-$proveoursecrettoken = required_param('oursecrettoken', PARAM_TEXT);
-$secrettoken = required_param('secrettoken', PARAM_TEXT);
+$request = optional_param('request', 0, PARAM_INT);
 
-if (!empty($oursecrettoken) && $oursecrettoken == $proveoursecrettoken) {
-    set_config('secrettoken', $secrettoken, 'local_edumessenger');
-    $DB->delete_records('config_plugins', array('plugin' => 'local_edumessenger', 'name' => 'outsecrettoken'));
-    error_log("TOKEN SET TO: " . $secrettoken);
-    echo "1";
+if (!empty($request)) {
+    $sysctx = context_system::instance();
+    $isadmin =  has_capability('moodle/site:config', $sysctx);
+
+    if ($isadmin) {
+        local_edumessenger_lib::secretToken(true, true);
+    } else {
+        echo "No permission to do this!";
+    }
 } else {
-    echo "0";
+    $oursecrettoken = get_config('local_edumessenger', 'oursecrettoken');
+    $proveoursecrettoken = required_param('oursecrettoken', PARAM_TEXT);
+    $secrettoken = required_param('secrettoken', PARAM_TEXT);
+
+    if (!empty($oursecrettoken) && $oursecrettoken == $proveoursecrettoken) {
+        set_config('secrettoken', $secrettoken, 'local_edumessenger');
+        $DB->delete_records('config_plugins', array('plugin' => 'local_edumessenger', 'name' => 'outsecrettoken'));
+        error_log("TOKEN SET TO: " . $secrettoken);
+        echo "1";
+    } else {
+        echo "0";
+    }
 }
