@@ -104,7 +104,7 @@ class observer {
             break;
         }
 
-        error_log("QUITEM: " . print_r($qitem, 1));
+        //error_log("QUITEM: " . print_r($qitem, 1));
 
         if (!empty($qitem->id)) {
             // Send item.

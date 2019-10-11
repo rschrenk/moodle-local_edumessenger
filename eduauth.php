@@ -243,8 +243,6 @@ class local_edumessenger_eduauth {
                                 $group->cancreatepost = forum_user_can_post_discussion($forum, $group->id, -1, $forum->cm, $context);
                                 $agroups[$group->name] = $group;
                             }
-                            //sort($agroups);
-                            //$forum->groups = array_values($agroups);
                             $forum->groups = array_values($agroups);
                         }
                         $forum->cancreatepost = forum_user_can_post_discussion($forum, null, -1, $forum->cm, $context);
