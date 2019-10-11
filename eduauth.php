@@ -127,61 +127,67 @@ class local_edumessenger_eduauth {
             case 'create_post':
                 // forum_user_can_post() --> line 182 in forum/post.php
                 require_once($CFG->dirroot . '/mod/forum/lib.php');
-                $discussion = $DB->get_record('forum_discussions', array('id' => $data->discussionid), '*', MUST_EXIST);
-                $reply->discussion = $discussion;
-                $forum = $DB->get_record('forum', array('id' => $discussion->forum), '*', MUST_EXIST);
-                $reply->forum = $forum;
+                $discussion = $DB->get_record('forum_discussions', array('id' => $data->discussionid));
+                if (empty($discussion->id)) {
+                    // seems it has been removed....
+                    $reply->error = 'discussion_does_not_exist';
+                } else {
+                    $reply->discussion = $discussion;
+                    $forum = $DB->get_record('forum', array('id' => $discussion->forum), '*', MUST_EXIST);
+                    $reply->forum = $forum;
 
-                $course = get_course($forum->course);
-                $cm = get_coursemodule_from_instance('forum', $forum->id, $course->id);
-                $context = context_module::instance($cm->id);
+                    $course = get_course($forum->course);
+                    $cm = get_coursemodule_from_instance('forum', $forum->id, $course->id);
+                    $context = context_module::instance($cm->id);
 
-                global $USER;
-                if (forum_user_can_post($forum, $discussion, $USER, $cm, $course)) {
-                    $origmessage = $data->message;
-                    local_edumessenger_lib::add_watermark($data->message, 1);
-                    $post = (object) array(
-                        'userid' => $USER->id,
-                        'created' => time(),
-                        'deleted' => 0,
-                        'modified' => time(),
-                        'subject' => mb_strimwidth(strip_tags($origmessage), 0, 30, "..."), // required for post
-                        'message' => $data->message,
-                        'messageformat' => 1, // We force HTML-format
-                        'messagetrust' => true, // we do not know what this is! - there is no documentation on this!
-                        'attachments' => null, // @todo add attachments filearea here
-                        'discussion' => $discussion->id,
-                        'forum' => $forum->id,
-                        'course' => $forum->course,
-                        'mailnow' => 0,
-                        'parent' => $discussion->firstpost,
-                    );
-                    $reply->postid = forum_add_new_post($post, array());
-                    if (!empty($reply->postid)) {
-                        $eventparams = array(
-                            'context' => $context,
-                            'objectid' => $reply->postid,
-                            'other' => array(
-                                'discussionid' => $discussion->id,
-                                'forumid' => $discussion->forum,
-                                'forumtype' => $forum->type,
-                            ),
+                    global $USER;
+                    if (forum_user_can_post($forum, $discussion, $USER, $cm, $course)) {
+                        $origmessage = $data->message;
+                        local_edumessenger_lib::add_watermark($data->message, 1);
+                        $post = (object) array(
+                            'userid' => $USER->id,
+                            'created' => time(),
+                            'deleted' => 0,
+                            'modified' => time(),
+                            'subject' => mb_strimwidth(strip_tags($origmessage), 0, 30, "..."), // required for post
+                            'message' => $data->message,
+                            'messageformat' => 1, // We force HTML-format
+                            'messagetrust' => true, // we do not know what this is! - there is no documentation on this!
+                            'attachments' => null, // @todo add attachments filearea here
+                            'discussion' => $discussion->id,
+                            'forum' => $forum->id,
+                            'course' => $forum->course,
+                            'mailnow' => 0,
+                            'parent' => $discussion->firstpost,
                         );
-                        $event = \mod_forum\event\post_created::create($eventparams);
-                        $event->add_record_snapshot('forum_posts', $post);
-                        $event->trigger();
+                        $reply->postid = forum_add_new_post($post, array());
+                        if (!empty($reply->postid)) {
+                            $eventparams = array(
+                                'context' => $context,
+                                'objectid' => $reply->postid,
+                                'other' => array(
+                                    'discussionid' => $discussion->id,
+                                    'forumid' => $discussion->forum,
+                                    'forumtype' => $forum->type,
+                                ),
+                            );
+                            $event = \mod_forum\event\post_created::create($eventparams);
+                            $event->add_record_snapshot('forum_posts', $post);
+                            $event->trigger();
 
-                        $reply->post = $DB->get_record('forum_posts', array('id' => $reply->postid));
-                        local_edumessenger_lib::enhance_post($reply->post);
-                        /*
-                        $reply->post->courseid = $forum->course;
-                        $reply->post->forumid = $forum->id;
-                        $reply->post->discussionid = $discussion->id;
-                        */
+                            $reply->post = $DB->get_record('forum_posts', array('id' => $reply->postid));
+                            local_edumessenger_lib::enhance_post($reply->post);
+                            /*
+                            $reply->post->courseid = $forum->course;
+                            $reply->post->forumid = $forum->id;
+                            $reply->post->discussionid = $discussion->id;
+                            */
+                        }
                     }
                 }
             break;
             case 'get_conversation_messages':
+                if (empty($data->timemodified)) $data->timemodified = 0;
                 $ismember = $DB->get_record('message_conversation_members', array('userid' => $USER->id, 'conversationid' => $data->conversationid));
                 if (!empty($ismember->id)) {
                     if (local_edumessenger_lib::get_version() > 2018120300) { // Moodle 3.6

@@ -32,12 +32,13 @@ class observer {
 
         //error_log("OBSERVER EVENT: " . print_r($event, 1));
         $entry = (object)$event->get_data();
-        //error_log("OBSERVER EVENT ENTRY: " . print_r($entry, 1));
+        error_log("OBSERVER EVENT ENTRY: " . print_r($entry, 1));
 
         $pushobject = (object)array(
             'message' => '',
             'subject' => '',
             'targetuserids' => '',
+            'wwwroot' => $CFG->wwwroot,
         );
 
         switch ($entry->eventname) {
@@ -50,6 +51,7 @@ class observer {
                     $discussion = $DB->get_record("forum_discussions", array("id" => $entry->objectid));
                     $post = $DB->get_record("forum_posts", array("discussion" => $discussion->id, "parent" => 0));
                 }
+                $forum = $DB->get_record("forum", array("id" => $discussion->forum));
                 //error_log("DISCUSSION: " . print_r($discussion, 1));
                 //error_log("POST: " . print_r($post, 1));
 
@@ -58,6 +60,10 @@ class observer {
                 \local_edumessenger_lib::enhance_post($post);
                 $pushobject->message = $post->message;
                 $pushobject->subject = $discussion->name;
+                $pushobject->courseid = $forum->course;
+                $pushobject->forumid = $forum->id;
+                $pushobject->discussionid = $discussion->id;
+                $pushobject->postid = $post->id;
 
                 $context = \context_course::instance($discussion->course);
                 $coursemembers = array_keys(get_enrolled_users($context, '', 0, 'u.id'));
@@ -65,9 +71,10 @@ class observer {
                 $sql = "SELECT DISTINCT(u.id)
                             FROM {user} u, {local_edumessenger_tokens} let
                             WHERE u.id=let.userid
-                                AND u.id IN (" . implode(',', $coursemembers) . ")";
+                                AND u.id IN (" . implode(',', $coursemembers) . ")
+                                AND u.id<>?";
                 //error_log($sql);
-                $targetuserids = array_keys($DB->get_records_sql($sql, array()));
+                $targetuserids = array_keys($DB->get_records_sql($sql, array($post->userid)));
                 $pushobject->targetuserids = array();
 
                 $forum = $DB->get_record('forum', array('id' => $discussion->forum));
@@ -75,6 +82,7 @@ class observer {
                 $cm = get_fast_modinfo($course)->instances['forum'][$forum->id];
                 $contextmodule = \context_module::instance($cm->id);
                 foreach($targetuserids AS $tuid) {
+                    if ($tuid == $post->userid) continue;
                     $user = \core_user::get_user($tuid);
                     if(forum_user_can_see_discussion($forum, $discussion, $contextmodule, $user)) {
                         $pushobject->targetuserids[] = $tuid;
@@ -93,9 +101,16 @@ class observer {
                 $message = $DB->get_record('messages', array('id' => $entry->objectid));
                 \local_edumessenger_lib::enhance_message($message);
 
-                $pushobject->message = $message->fullmessagehtml;
-                $pushobject->subject = \mb_strimwidth($message->fullmessagehtml, 0, 20);
-                $pushobject->targetuserids = array_keys($DB->get_records('message_conversation_members', array('conversationid' => $message->conversationid)));
+                $pushobject->messageid = $message->id;
+                $pushobject->conversationid = $message->conversationid;
+                $pushobject->message = !empty($message->fullmessagehtml) ? $message->fullmessagehtml : $message->fullmessage;
+                $pushobject->subject = \mb_strimwidth($pushobject->message, 0, 20);
+                $targetuserids = $DB->get_records('message_conversation_members', array('conversationid' => $message->conversationid));
+                $pushobject->targetuserids = array();
+                foreach ($targetuserids AS $targetuserid) {
+                    if ($targetuserid == $entry->userid) continue;
+                    $pushobject->targetuserids[] = $targetuserid->userid;
+                }
                 $qitem = (object) array(
                     'created' => time(),
                     'id' => 0,
