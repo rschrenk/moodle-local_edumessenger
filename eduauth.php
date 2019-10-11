@@ -59,6 +59,17 @@ class local_edumessenger_eduauth {
                     );
                     $reply->discussionid = forum_add_discussion($discussion);
                     if (!empty($reply->discussionid)) {
+                        $eventparams = array(
+                            'context' => $context,
+                            'objectid' => $discussion->id,
+                            'other' => array(
+                                'forumid' => $forum->id,
+                            )
+                        );
+                        $event = \mod_forum\event\discussion_created::create($eventparams);
+                        $event->add_record_snapshot('forum_discussions', $discussion);
+                        $event->trigger();
+
                         $reply->discussion = $DB->get_record('forum_discussions', array('id' => $reply->discussionid));
                         local_edumessenger_lib::enhance_discussion($reply->discussion);
 
@@ -132,6 +143,7 @@ class local_edumessenger_eduauth {
                     $post = (object) array(
                         'userid' => $USER->id,
                         'created' => time(),
+                        'deleted' => 0,
                         'modified' => time(),
                         'subject' => mb_strimwidth(strip_tags($origmessage), 0, 30, "..."), // required for post
                         'message' => $data->message,
@@ -142,9 +154,23 @@ class local_edumessenger_eduauth {
                         'forum' => $forum->id,
                         'course' => $forum->course,
                         'mailnow' => 0,
+                        'parent' => $discussion->firstpost,
                     );
                     $reply->postid = forum_add_new_post($post, array());
                     if (!empty($reply->postid)) {
+                        $eventparams = array(
+                            'context' => $context,
+                            'objectid' => $reply->postid,
+                            'other' => array(
+                                'discussionid' => $discussion->id,
+                                'forumid' => $discussion->forum,
+                                'forumtype' => $forum->type,
+                            ),
+                        );
+                        $event = \mod_forum\event\post_created::create($eventparams);
+                        $event->add_record_snapshot('forum_posts', $post);
+                        $event->trigger();
+
                         $reply->post = $DB->get_record('forum_posts', array('id' => $reply->postid));
                         local_edumessenger_lib::enhance_post($reply->post);
                         /*

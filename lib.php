@@ -157,6 +157,7 @@ class local_edumessenger_lib {
     public static function enhance_discussion(&$discussion) {
         global $CFG, $DB;
         if (empty($discussion)) return;
+        if (empty($discussion->discussion)) $discussion->discussion = $discussion->id;
         $discussion->discussionid = $discussion->discussion;
         if (empty($discussion->forum)) {
             $d = $DB->get_record('forum_discussions', array('id' => $discussion->discussion));
@@ -205,6 +206,7 @@ class local_edumessenger_lib {
      */
     public static function enhance_post(&$post) {
         global $CFG, $DB, $USER;
+        //error_log(print_r($post, 1));
         $post->postid = $post->id;
         $discussion = self::get_cache('discussions', $post->discussion);
         $post->discussionid = $post->discussion;
@@ -225,9 +227,8 @@ class local_edumessenger_lib {
         }
         // Scores.
         require_once($CFG->dirroot . '/rating/lib.php');
-        $forum = self::get_cache('forums', $post->forumid);
         $ratingoptions = new stdClass;
-        $ratingoptions->context = self::get_cache('ctxforums', $post->forumid);
+        $ratingoptions->context = self::get_cache('ctxforums', $forum->id);
         $ratingoptions->component = 'mod_forum';
         $ratingoptions->ratingarea = 'post';
         $ratingoptions->items = array($post);
@@ -299,7 +300,7 @@ class local_edumessenger_lib {
     public static function sendQitem($qitem) {
         global $CFG, $DB;
         error_log("SEND QUITEM: " . print_r($qitem, 1));
-        if (!empty($qitem->subject) && !empty($qitem->message) && !empty($qitem->targetusers)) {
+        if (!empty($qitem->id)) {
             // Make curl request to eduMessenger-central.
             $secrettoken = self::secretToken();
             if (empty($secrettoken)) {
@@ -310,7 +311,7 @@ class local_edumessenger_lib {
                 $data = array(
                     'host' => $CFG->wwwroot,
                     'secret' => $secrettoken,
-                    'qitem' => $qitem,
+                    'qitem' => $qitem->json,
                     'release' => $CFG->release,
                     'plugin' => get_config('local_edumessenger', 'version')
                 );
@@ -327,14 +328,14 @@ class local_edumessenger_lib {
 
                 $chk = json_decode($result);
 
+                error_log('Sent QItem: ' . print_r($qitem, 1));
+                error_log('Result was: ' . $result);
+
                 // Delete queue item if curl was successful.
                 if (!empty($chk->stored) && !empty($qitem->id)) {
                     $DB->delete_records('local_edumessenger_queue', array('id' => $qitem->id));
                 }
             }
-        } elseif (!empty($qitem->id)) {
-            // Invalid queue-item - remove it.
-            $DB->delete_records('local_edumessenger_queue', array('id' => $qitem->id));
         }
     }
 

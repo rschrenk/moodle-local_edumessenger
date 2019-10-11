@@ -61,7 +61,7 @@ class observer {
 
                 $context = \context_course::instance($discussion->course);
                 $coursemembers = array_keys(get_enrolled_users($context, '', 0, 'u.id'));
-                error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
+                //error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
                 $sql = "SELECT DISTINCT(u.id)
                             FROM {user} u, {local_edumessenger_tokens} let
                             WHERE u.id=let.userid
@@ -87,6 +87,7 @@ class observer {
                     'json' => json_encode($pushobject),
                 );
                 $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
+                error_log('Stored QItem: ' . print_r($qitem, 1));
             break;
             case "\\core\\event\\message_sent":
                 $message = $DB->get_record('messages', array('id' => $entry->objectid));
