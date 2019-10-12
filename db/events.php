@@ -26,8 +26,12 @@ defined('MOODLE_INTERNAL') || die;
 $observers = array();
 $events = array(
     "\\mod_forum\\event\\discussion_created",
+    "\\mod_forum\\event\\discussion_deleted",
     "\\mod_forum\\event\\post_created",
+    "\\mod_forum\\event\\post_deleted",
+    "\\mod_forum\\event\\post_updated",
     "\\core\\event\\message_sent",
+    "\\core\\event\\message_deleted",
 );
 foreach ($events AS $event) {
     $observers[] = array(

@@ -43,8 +43,11 @@ class observer {
 
         switch ($entry->eventname) {
             case "\\mod_forum\\event\\post_created":
+            case "\\mod_forum\\event\\post_deleted":
+            case "\\mod_forum\\event\\post_updated":
             case "\\mod_forum\\event\\discussion_created":
-                if ($entry->eventname == "\\mod_forum\\event\\post_created") {
+            case "\\mod_forum\\event\\discussion_deleted":
+                if (substr($entry->eventname, 0, strlen("\\mod_forum\\event\\post_")) == "\\mod_forum\\event\\post_") {
                     $post = $DB->get_record("forum_posts", array("id" => $entry->objectid));
                     $discussion = $DB->get_record("forum_discussions", array("id" => $post->discussion));
                 } else {
@@ -55,11 +58,15 @@ class observer {
                 //error_log("DISCUSSION: " . print_r($discussion, 1));
                 //error_log("POST: " . print_r($post, 1));
 
-
                 \local_edumessenger_lib::enhance_discussion($discussion);
                 \local_edumessenger_lib::enhance_post($post);
-                $pushobject->message = $post->message;
-                $pushobject->subject = $discussion->name;
+
+                // We only attach the text if it is not deleted!
+                if (empty($post->deleted)) {
+                    $pushobject->message = $post->message;
+                    $pushobject->subject = $discussion->name;
+                }
+
                 $pushobject->courseid = $forum->course;
                 $pushobject->forumid = $forum->id;
                 $pushobject->discussionid = $discussion->id;
