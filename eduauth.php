@@ -317,11 +317,10 @@ class local_edumessenger_eduauth {
                             local_edumessenger_lib::enhance_post($post);
                         }
                     } else {
-                        $reply->error = 'No_access_to_such_discussion';
+                        $reply->command = 'remove_this_discussion';
                     }
                 } else {
-                    $reply->error = 'No_access_to_such_discussion';
-                    $reply->error_ext = 'post missing';
+                    $reply->command = 'remove_this_discussion';
                 }
             break;
             case 'get_stream':
