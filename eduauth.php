@@ -338,16 +338,16 @@ class local_edumessenger_eduauth {
                     $sql = "SELECT p.*
                                 FROM {forum_posts} p, {forum_discussions} d
                                 WHERE p.discussion=d.id
-                                    AND d.course IN (" . implode(',', $userscourseids) . ")
-                                    AND p.modified<" . $priorto . "
+                                    AND d.course IN (?)
+                                    AND p.modified<?
                                 ORDER BY p.modified DESC
                                 LIMIT " . $offset . ", " . $limit;
                 } else {
                     $sql = "SELECT p.*
                                 FROM {forum_posts} p, {forum_discussions} d
                                 WHERE p.discussion=d.id
-                                    AND d.course IN (" . implode(',', $userscourseids) . ")
-                                    AND p.modified>" . $lastknownmodified . "
+                                    AND d.course IN (?)
+                                    AND p.modified>?
                                 ORDER BY p.modified " . $ordering . "
                                 LIMIT " . $offset . ", " . $limit;
                 }
@@ -356,7 +356,7 @@ class local_edumessenger_eduauth {
                 $reply->ordering = $ordering;
                 $reply->lastknownmodified = $lastknownmodified;
                 $reply->limit = $limit;
-                $reply->posts = $DB->get_records_sql($sql, array());
+                $reply->posts = $DB->get_records_sql($sql, array(implode(',', $userscourseids), $lastknownmodified));
                 $reply->discussions = array();
                 foreach($reply->posts AS &$post) {
                     local_edumessenger_lib::enhance_post($post);
@@ -365,6 +365,35 @@ class local_edumessenger_eduauth {
                         $reply->discussions[$post->discussionid]->discussion = $post->discussion;
                         $reply->discussions[$post->discussionid]->forumid = $reply->discussions[$post->discussionid]->forum;
                         local_edumessenger_lib::enhance_discussion($reply->discussions[$post->discussionid]);
+                    }
+                }
+
+                // Get messages too.
+                $sql = "SELECT mcm.*
+                            FROM {messages} m, {message_conversations} mc, {message_conversation_members} mcm
+                            WHERE mc.id = mcm.conversationid
+                                AND mc.id = m.conversationid
+                                AND mcm.userid=?
+                                AND m.timecreated>?
+                            ORDER BY m.timecreated " . $ordering . "
+                            LIMIT " . $offset . ", " . $limit;
+                $reply->conversations = $DB->get_records_sql($sql, array($USER->id, $lastknownmodified));
+                foreach ($reply->conversations AS &$conversation) {
+                    $conversation->members = $DB->get_records('message_conversation_members', array('conversationid' => $conversation->conversationid));
+                    if (local_edumessenger_lib::get_version() > 2018120300) { // Moodle 3.6
+                        require_once($CFG->dirroot . '/message/lib.php');
+                        require_once($CFG->dirroot . '/message/classes/api.php');
+                        $conversation->messages = \core_message\api::get_conversation_messages($USER->id, $conversation->conversationid, $lastknownmodified);
+                    } elseif(local_edumessenger_lib::get_version() > 2016052300) { // Moodle 3.2
+                        $conversation->messages = $DB->get_records_sql('SELECT * FROM {messages} WHERE conversationid=? AND timecreated>?', array($conversation->conversationid, $lastknownmodified));
+                    } else {
+                        $reply->error = get_string('incompatible_moodle_version', 'local_edumessenger') . ': ' . local_edumessenger_lib::get_version();
+                    }
+                    foreach ($conversation->messages AS &$message) {
+                        local_edumessenger_lib::enhance_message($message);
+                    }
+                    foreach ($conversation->members AS &$member) {
+                        local_edumessenger_lib::enhance_user($member);
                     }
                 }
             break;
