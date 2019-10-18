@@ -192,13 +192,15 @@ class local_edumessenger_lib {
             $message->userpictureurl = $CFG->wwwroot . '/pluginfile.php/' . $usercontext->id . '/user/icon';
         }
         // Get rid of edm-watermark
-        $msg = explode('<div class="watermark"', $message->fullmessagehtml);
-        $message->fullmessagehtml = $msg[0];
+        //$msg = explode('<div class="watermark"', $message->fullmessagehtml);
+        $msg = explode('<div class="watermark"', $message->smallmessage);
+        $message->enhancedmessage = $msg[0];
 
-        // Get rid of system-message
-        $msg = explode('---------------------------------------------------------------------', $message->fullmessagehtml);
-        $message->fullmessagehtml = $msg[0];
-        if (empty($message->fullmessagehtml)) $message->fullmessagehtml = $message->fullmessage;
+        // Old messenger-style, we used a hr
+        $msg = explode('<hr class="watermark"', $message->enhancedmessage);
+        $message->enhancedmessage = $msg[0];
+
+        if (empty($message->enhancedmessage)) $message->enhancedmessage = $message->smallmessage;
     }
     /**
      * Enhance a post-object with additional data.
