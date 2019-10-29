@@ -56,6 +56,7 @@ class local_edumessenger_eduauth {
                         'forum' => $forum->id,
                         'course' => $forum->course,
                         'mailnow' => 0,
+                        'itemid' => 0, // used to save file attachments.
                     );
                     $reply->discussionid = forum_add_discussion($discussion);
                     if (!empty($reply->discussionid)) {
@@ -159,6 +160,7 @@ class local_edumessenger_eduauth {
                             'course' => $forum->course,
                             'mailnow' => 0,
                             'parent' => $discussion->firstpost,
+                            'itemid' => 0, // used to save file attachments.
                         );
                         $reply->postid = forum_add_new_post($post, array());
                         if (!empty($reply->postid)) {

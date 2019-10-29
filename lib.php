@@ -36,6 +36,7 @@ class local_edumessenger_lib {
     public static $cache = array();
     public static $verifieduserid = 0;
     private static $URLCENTRAL = 'https://messenger.dibig.at/v-6/service.php';
+    private static $DEBUGGING = -1;
     /**
      * Adds a watermark to a text.
      * @param text the text to add the watermark to
@@ -108,6 +109,15 @@ class local_edumessenger_lib {
         } else {
             return '';
         }
+    }
+    /**
+     * @return if debugging to error_log is enabled.
+     */
+    public static function debugging() {
+        if (self::$DEBUGGING == -1) {
+            self::$DEBUGGING = get_config('local_edumessenger', 'debug');
+        }
+        return self::$DEBUGGING;
     }
     /**
      * Get certain item from cache or database.
@@ -301,7 +311,7 @@ class local_edumessenger_lib {
      */
     public static function sendQitem($qitem) {
         global $CFG, $DB;
-        error_log("SEND QUITEM: " . print_r($qitem, 1));
+        if (self::debugging()) error_log("SEND QUITEM: " . print_r($qitem, 1));
         if (!empty($qitem->id)) {
             // Make curl request to eduMessenger-central.
             $secrettoken = self::secretToken();
@@ -330,8 +340,8 @@ class local_edumessenger_lib {
 
                 $chk = json_decode($result);
 
-                error_log('Sent QItem: ' . print_r($qitem, 1));
-                error_log('Result was: ' . $result);
+                if (self::debugging()) error_log('Sent QItem: ' . print_r($qitem, 1));
+                if (self::debugging()) error_log('Result was: ' . $result);
 
                 // Delete queue item if curl was successful.
                 if (!empty($chk->stored) && !empty($qitem->id)) {

@@ -25,14 +25,15 @@ namespace local_edumessenger;
 
 defined('MOODLE_INTERNAL') || die;
 
+require_once($CFG->dirroot . "/local/edumessenger/lib.php");
+
 class observer {
     public static function event($event) {
         global $CFG, $DB;
-        require_once($CFG->dirroot . "/local/edumessenger/lib.php");
 
         //error_log("OBSERVER EVENT: " . print_r($event, 1));
         $entry = (object)$event->get_data();
-        error_log("OBSERVER EVENT ENTRY: " . print_r($entry, 1));
+        if (\local_edumessenger_lib::debugging()) error_log("OBSERVER EVENT ENTRY: " . print_r($entry, 1));
 
         $pushobject = (object)array(
             'message' => '',
@@ -78,7 +79,7 @@ class observer {
                     'json' => json_encode($pushobject),
                 );
                 //$qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
-                error_log('Stored QItem: ' . print_r($qitem, 1));
+                if (\local_edumessenger_lib::debugging()) error_log('Stored QItem: ' . print_r($qitem, 1));
             break;
             case "\\mod_forum\\event\\post_created":
             case "\\mod_forum\\event\\post_updated":
@@ -115,13 +116,13 @@ class observer {
                     'json' => json_encode($pushobject),
                 );
                 $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
-                error_log('Stored QItem: ' . print_r($qitem, 1));
+                if (\local_edumessenger_lib::debugging()) error_log('Stored QItem: ' . print_r($qitem, 1));
 
                 // Now we create a silent push notification for the author of the post.
                 $pushobject->targetuserids = array($entry->userid);
                 $qitem->id = 0;
                 $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
-                error_log('Stored QItem for event-userid: ' . print_r($qitem, 1));
+                if (\local_edumessenger_lib::debugging()) error_log('Stored QItem for event-userid: ' . print_r($qitem, 1));
             break;
             case "\\core\\event\\message_sent":
                 $message = $DB->get_record('messages', array('id' => $entry->objectid));
@@ -169,7 +170,7 @@ class observer {
         $forum = $DB->get_record("forum", array("id" => $discussion->forum));
         $context = \context_course::instance($discussion->course);
         $coursemembers = array_keys(get_enrolled_users($context, '', 0, 'u.id'));
-        //error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
+        //if (\local_edumessenger_lib::debugging()) error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
         $sql = "SELECT DISTINCT(u.id)
                     FROM {user} u, {local_edumessenger_tokens} let
                     WHERE u.id=let.userid
