@@ -211,7 +211,7 @@ class local_edumessenger_eduauth {
             break;
             case 'get_conversations':
                 $lastknownmodified = intval($data->lastknownmodified);
-                $sql = "SELECT mcm.*
+                $sql = "SELECT mcm.id,mcm.*
                             FROM {messages} m, {message_conversations} mc, {message_conversation_members} mcm
                             WHERE mc.id = mcm.conversationid
                                 AND mc.id = m.conversationid
