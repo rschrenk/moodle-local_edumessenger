@@ -34,4 +34,13 @@ if (isset($settings)) {
             PARAM_INT
         )
     );
+    $settings->add(
+        new admin_setting_configcheckbox(
+            'local_edumessenger/debug',
+            get_string('settings:debug', 'local_edumessenger'),
+            get_string('settings:debug:description', 'local_edumessenger'),
+            0,
+            PARAM_INT
+        )
+    );
 }
