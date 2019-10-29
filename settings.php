@@ -17,21 +17,23 @@
 /**
  * Links and settings
  * @package    local_edumessenger
- * @copyright  2017 Digital Education Society (http://www.dibig.at)
+ * @copyright  2017-2019 Digital Education Society (http://www.dibig.at)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-if (isset($settings)) {
+// This kind of making a settings page is only for local-plugins!
+if ( $hassiteconfig ){
+    $settings = new admin_settingpage( 'local_edumessenger', get_string('pluginname', 'local_edumessenger'));
+    $ADMIN->add( 'localplugins', $settings );
     // @TODO use this value to disable any communication to edumessenger-central
     $settings->add(
         new admin_setting_configcheckbox(
             'local_edumessenger/allowpush',
             get_string('settings:allowpush', 'local_edumessenger'),
             get_string('settings:allowpush:description', 'local_edumessenger'),
-            1,
-            PARAM_INT
+            1
         )
     );
     $settings->add(
@@ -39,8 +41,7 @@ if (isset($settings)) {
             'local_edumessenger/debug',
             get_string('settings:debug', 'local_edumessenger'),
             get_string('settings:debug:description', 'local_edumessenger'),
-            0,
-            PARAM_INT
+            0
         )
     );
 }
