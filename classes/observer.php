@@ -26,6 +26,7 @@ namespace local_edumessenger;
 defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot . "/local/edumessenger/lib.php");
+require_once($CFG->dirroot . "/mod/forum/lib.php");
 
 class observer {
     public static function event($event) {
@@ -106,23 +107,22 @@ class observer {
                 $pushobject->discussionid = $discussion->id;
                 $pushobject->postid = $post->id;
 
-                $pushobject->targetuserids = self::users_for_discussion($pushobject->discussionid);
-                // Remove the user himself from list of recipients.
-                unset($pushobject->targetuserids[array_search($entry->userid, $pushobject->targetuserids)]);
+                $pushobject->targetuserids = self::users_for_discussion($pushobject->discussionid, $entry->userid);
 
                 $qitem = (object) array(
                     'created' => time(),
                     'id' => 0,
                     'json' => json_encode($pushobject),
                 );
-                $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
-                if (\local_edumessenger_lib::debugging()) error_log('Stored QItem: ' . print_r($qitem, 1));
+                if (count($pushobject->targetuserids) > 0) {
+                    $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
+                    if (\local_edumessenger_lib::debugging()) error_log('Stored QItem: ' . print_r($qitem, 1));
+                } else {
+                    if (\local_edumessenger_lib::debugging()) error_log('EMPTY LIST OF RECIPIENTS: ' . print_r($qitem, 1));
+                }
 
                 // Now we create a silent push notification for the author of the post.
-                $pushobject->targetuserids = array($entry->userid);
-                $qitem->id = 0;
-                $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
-                if (\local_edumessenger_lib::debugging()) error_log('Stored QItem for event-userid: ' . print_r($qitem, 1));
+                self::silent_message($pushobject, $entry->userid);
             break;
             case "\\core\\event\\message_sent":
                 $message = $DB->get_record('messages', array('id' => $entry->objectid));
@@ -132,20 +132,21 @@ class observer {
                 $pushobject->conversationid = $message->conversationid;
                 $pushobject->message = !empty($message->fullmessagehtml) ? $message->fullmessagehtml : $message->fullmessage;
                 $pushobject->subject = \mb_strimwidth($pushobject->message, 0, 20);
-                $targetuserids = $DB->get_records('message_conversation_members', array('conversationid' => $message->conversationid));
-                $pushobject->targetuserids = array();
-                foreach ($targetuserids AS $targetuserid) {
-                    if ($targetuserid == $entry->userid) continue;
-                    $pushobject->targetuserids[] = $targetuserid->userid;
+                $pushobject->targetuserids = self::users_for_conversation($pushobject->conversationid, $entry->userid);
+                if (count($pushobject->targetuserids) > 0) {
+                    $qitem = (object) array(
+                        'created' => time(),
+                        'id' => 0,
+                        'json' => json_encode($pushobject),
+                    );
+                    $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
+                    if (\local_edumessenger_lib::debugging()) error_log('Stored QItem: ' . print_r($qitem, 1));
+                } else {
+                    if (\local_edumessenger_lib::debugging()) error_log('EMPTY LIST OF RECIPIENTS: ' . print_r($qitem, 1));
                 }
-                // Remove the user himself from list of recipients.
-                unset($pushobject->targetuserids[array_search($entry->userid, $pushobject->targetuserids)]);
-                $qitem = (object) array(
-                    'created' => time(),
-                    'id' => 0,
-                    'json' => json_encode($pushobject),
-                );
                 $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
+                // Now we create a silent push notification for the author of the post.
+                self::silent_message($pushobject, $entry->userid);
             break;
         }
 
@@ -160,9 +161,34 @@ class observer {
     }
 
     /**
-     * Test who can access a discussion.
+     * Test who can access a conversation.
+     * @param conversationid
+     * @param exceptuserid userid we will never include.
      */
-    private static function users_for_discussion($discussionid) {
+    private static function users_for_conversation($conversationid, $exceptuserid) {
+        global $DB;
+        $mcms = $DB->get_records('message_conversation_members', array('conversationid' => $conversationid));
+        foreach ($mcms AS $id => $mcm) {
+            if ($mcm->userid == $exceptuserid) continue;
+            $conversationmembers[] = $mcm->userid;
+        }
+
+        if (\local_edumessenger_lib::debugging()) error_log("CONVERSATIONMEMBERS: " . print_r($conversationmembers, 1));
+
+        $sql = "SELECT DISTINCT(up.userid) AS userid
+                    FROM {user_preferences} up
+                    WHERE name LIKE 'message_provider_edumessenger_message'
+                        AND value LIKE 'push'
+                        AND up.userid IN (" . implode(',', $conversationmembers) . ")";
+        if (\local_edumessenger_lib::debugging()) error_log($sql);
+        return array_keys($DB->get_records_sql($sql, array()));
+    }
+    /**
+     * Test who can access a discussion.
+     * @param discussionid
+     * @param exceptuserid userid we will never include.
+     */
+    private static function users_for_discussion($discussionid, $exceptuserid = 0) {
         global $DB;
         $discussion = $DB->get_record("forum_discussions", array("id" => $discussionid));
         if (empty($discussion->id)) return array(-1);
@@ -170,25 +196,56 @@ class observer {
         $forum = $DB->get_record("forum", array("id" => $discussion->forum));
         $context = \context_course::instance($discussion->course);
         $coursemembers = array_keys(get_enrolled_users($context, '', 0, 'u.id'));
-        //if (\local_edumessenger_lib::debugging()) error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
-        $sql = "SELECT DISTINCT(u.id)
-                    FROM {user} u, {local_edumessenger_tokens} let
-                    WHERE u.id=let.userid
-                        AND u.id IN (" . implode(',', $coursemembers) . ")";
-        //error_log($sql);
-        $_targetuserids = array_keys($DB->get_records_sql($sql, array()));
+        if (\local_edumessenger_lib::debugging()) error_log("COURSEMEMBERS: " . print_r($coursemembers, 1));
 
-        $course = get_course($forum->course);
-        $cm = get_fast_modinfo($course)->instances['forum'][$forum->id];
-        $contextmodule = \context_module::instance($cm->id);
-        $targetuserids = array();
-        foreach($_targetuserids AS $tuid) {
-            $user = \core_user::get_user($tuid);
-            if(forum_user_can_see_discussion($forum, $discussion, $contextmodule, $user)) {
-                $targetuserids[] = $tuid;
-            };
+        $sql = "SELECT DISTINCT(up.userid) AS userid
+                    FROM {user_preferences} up
+                    WHERE name LIKE 'message_provider_edumessenger_forum'
+                        AND value LIKE 'push'
+                        AND up.userid IN (" . implode(',', $coursemembers) . ")";
+        if (\local_edumessenger_lib::debugging()) error_log($sql);
+        $_targetuserids = array_keys($DB->get_records_sql($sql, array()));
+        if (\local_edumessenger_lib::debugging()) error_log("COURSEMEMBERS using Messenger: " . print_r($_targetuserids, 1));
+        if ($cm = get_coursemodule_from_instance('forum', $forum->id, $forum->course)) {
+            $contextmodule = \context_module::instance($cm->id);
+            $targetuserids = array();
+            foreach($_targetuserids AS $tuid) {
+                if ($tuid == $exceptuserid) continue;
+                $user = \core_user::get_user($tuid);
+                if(\forum_user_can_see_discussion($forum, $discussion, $contextmodule, $user)) {
+                    //if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can access discussion");
+                    $targetuserids[] = $tuid;
+                } else {
+                    //if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can NOT access discussion");
+                }
+            }
+            //if (\local_edumessenger_lib::debugging()) error_log("Want to send notification to " . print_r($targetuserids, 1));
+            return $targetuserids;
+        } else {
+            return array();
         }
-        return $targetuserids;
+    }
+
+    /**
+     * Send a silent message.
+     * @param pushobject
+     * @param userid
+     **/
+    private static function silent_message($pushobject, $userid) {
+        global $DB;
+        $pref = $DB->get_record('user_preferences', array('name' => 'edumessenger_last_contact', 'userid' => $userid));
+        if (!empty($pref->id) && $pref->value > (time() - 60*60*24*365)) {
+            $pushobject->targetuserids = array($userid);
+            $qitem = (object) array(
+                'created' => time(),
+                'id' => 0,
+                'json' => json_encode($pushobject),
+            );
+            $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
+            if (\local_edumessenger_lib::debugging()) error_log('Stored QItem for event-userid: ' . print_r($qitem, 1));
+        } else {
+            if (\local_edumessenger_lib::debugging()) error_log('No silent message for userid: ' . $userid);
+        }
     }
 
 }

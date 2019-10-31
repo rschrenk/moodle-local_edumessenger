@@ -32,6 +32,19 @@ class local_edumessenger_eduauth {
         if (empty($data->act)) {
             return $reply;
         }
+        // Add a dummy preference that we use edumessenger.
+        $rec = $DB->get_record('user_preferences', array('userid' => $USER->id, 'name' => 'edumessenger_last_contact'));
+        if (!empty($rec->id)) {
+            $rec->value = time();
+            $DB->update_record('user_preferences', $rec);
+        } else {
+            $rec = (object) array(
+                'name' => 'edumessenger_last_contact',
+                'userid' => $USER->id,
+                'value' => time()
+            );
+            $DB->insert_record('user_preferences', $rec);
+        }
         switch ($data->act) {
             case 'create_discussion':
                 require_once($CFG->dirroot . '/mod/forum/lib.php');
@@ -392,6 +405,7 @@ class local_edumessenger_eduauth {
                     'userid' => $USER->id,
                     'username' => $USER->username,
                 );
+
                 $preferences = $DB->get_records_sql('SELECT * FROM {user_preferences} WHERE userid=? AND name LIKE "message_provider_%"', array($USER->id));
                 $reply->preferences = array(
                     'forum_mail' => 0,
