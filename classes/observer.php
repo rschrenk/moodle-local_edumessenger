@@ -32,6 +32,12 @@ class observer {
     public static function event($event) {
         global $CFG, $DB;
 
+        $allowpush = get_config('local_edumessenger', 'allowpush');
+        if (!$allowpush) {
+            if (\local_edumessenger_lib::debugging()) error_log("PUSH NOTIFICATIONS USING EDUMESSENGER ARE DISABLED BY ADMIN");
+            return;
+        }
+
         //error_log("OBSERVER EVENT: " . print_r($event, 1));
         $entry = (object)$event->get_data();
         if (\local_edumessenger_lib::debugging()) error_log("OBSERVER EVENT ENTRY: " . print_r($entry, 1));
