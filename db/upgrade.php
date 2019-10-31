@@ -41,7 +41,7 @@ function xmldb_local_edumessenger_upgrade($oldversion=0) {
         }
         upgrade_plugin_savepoint(true, 2018110201, 'local', 'edumessenger');
     }
-    if ($oldversion < 2019022300) {.
+    if ($oldversion < 2019022300) {
         $table = new xmldb_table('local_edumessenger_tokens');
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
