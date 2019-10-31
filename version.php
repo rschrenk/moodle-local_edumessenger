@@ -17,13 +17,13 @@
 /**
  * Links and settings
  * @package    local_edumessenger
- * @copyright  2017 Digital Education Society (http://www.dibig.at)
+ * @copyright  2017-2019 Digital Education Society (http://www.dibig.at)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version  = 2019102902;   // The (date) version of this module + 2 extra digital for daily versions
+$plugin->version  = 2019102903;   // The (date) version of this module + 2 extra digital for daily versions
                                   // This version number is displayed into /admin/forms.php
                                   // TODO: if ever this plugin get branched, the old branch number
                                   // will not be updated to the current date but just incremented. We will
@@ -32,7 +32,7 @@ $plugin->version  = 2019102902;   // The (date) version of this module + 2 extra
 $plugin->requires = 2016052300;  // Requires at least Moodle 3.1!
 $plugin->component = 'local_edumessenger';
 $plugin->cron     = 0;
-$plugin->release = '1.4 (2019102902)';
+$plugin->release = '1.4 (2019102903)';
 $plugin->maturity = MATURITY_STABLE;
 $plugin->dependencies = array(
     'local_eduauth' => 2019071000,

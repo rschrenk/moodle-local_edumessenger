@@ -27,7 +27,6 @@ defined('MOODLE_INTERNAL') || die;
 if ( $hassiteconfig ){
     $settings = new admin_settingpage( 'local_edumessenger', get_string('pluginname', 'local_edumessenger'));
     $ADMIN->add( 'localplugins', $settings );
-    // @TODO use this value to disable any communication to edumessenger-central
     $settings->add(
         new admin_setting_configcheckbox(
             'local_edumessenger/allowpush',
