@@ -219,10 +219,10 @@ class observer {
                 if ($tuid == $exceptuserid) continue;
                 $user = \core_user::get_user($tuid);
                 if(\forum_user_can_see_discussion($forum, $discussion, $contextmodule, $user)) {
-                    //if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can access discussion");
+                    if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can access discussion");
                     $targetuserids[] = $tuid;
                 } else {
-                    //if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can NOT access discussion");
+                    if (\local_edumessenger_lib::debugging()) error_log("User " . $tuid . " can NOT access discussion");
                 }
             }
             //if (\local_edumessenger_lib::debugging()) error_log("Want to send notification to " . print_r($targetuserids, 1));
@@ -245,6 +245,7 @@ class observer {
             $qitem = (object) array(
                 'created' => time(),
                 'id' => 0,
+                'silent' => 1,
                 'json' => json_encode($pushobject),
             );
             $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
