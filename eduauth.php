@@ -84,6 +84,14 @@ class local_edumessenger_eduauth {
                         $event->add_record_snapshot('forum_discussions', $discussion);
                         $event->trigger();
 
+                        // Update completion status.
+                        $course = get_course($forum->course);
+                        $completion = new completion_info($course);
+                        if ($completion->is_enabled($cm) &&
+                            ($forum->completiondiscussions || $forum->completionposts)) {
+                            $completion->update_state($cm, COMPLETION_COMPLETE);
+                        }
+
                         $reply->discussion = $DB->get_record('forum_discussions', array('id' => $reply->discussionid));
                         local_edumessenger_lib::enhance_discussion($reply->discussion);
 
@@ -189,6 +197,13 @@ class local_edumessenger_eduauth {
                             $event = \mod_forum\event\post_created::create($eventparams);
                             $event->add_record_snapshot('forum_posts', $post);
                             $event->trigger();
+
+                            // Update completion state.
+                            $completion = new completion_info($course);
+                            if ($completion->is_enabled($cm) &&
+                                ($forum->completionreplies || $forum->completionposts)) {
+                                $completion->update_state($cm, COMPLETION_COMPLETE);
+                            }
 
                             $reply->post = $DB->get_record('forum_posts', array('id' => $reply->postid));
                             local_edumessenger_lib::enhance_post($reply->post);
