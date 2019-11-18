@@ -150,7 +150,6 @@ class observer {
                 } else {
                     if (\local_edumessenger_lib::debugging()) error_log('EMPTY LIST OF RECIPIENTS: ' . print_r($qitem, 1));
                 }
-                $qitem->id = $DB->insert_record('local_edumessenger_queue', $qitem, 1);
                 // Now we create a silent push notification for the author of the post.
                 self::silent_message($pushobject, $entry->userid);
             break;
